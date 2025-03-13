@@ -47,8 +47,11 @@ const useShops = () => {
     }, [nanoid]);
 
     const deleteShop = useCallback((shopId: string) => {
+        console.log("Deleting shop with ID:", shopId); // Debugging
         setShops((prevShops) => {
             const newShops = prevShops.filter((shop) => shop.id !== shopId);
+            console.log("Updated shops list:", newShops); // Debugging
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(newShops)); // Update localStorage
             return newShops;
         });
     }, []);

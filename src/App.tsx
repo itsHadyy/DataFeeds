@@ -1,3 +1,4 @@
+// App.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { Save, Undo, Settings, ArrowLeft, ChevronLeft, ChevronRight, MessageCircle, List } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
@@ -6,8 +7,9 @@ import { BrowserRouter as Router, Route, Routes, useNavigate } from 'react-route
 import MappingField from './components/MappingField';
 import XMLUploader from './components/XMLUploader';
 import ShopDashboard from './components/ShopDashboard';
-import ChannelsPage from './components/ChannelsPage'; // New component
-import ChannelMappingPage from './components/ChannelMappingPage'; // New component
+import ChannelsPage from './components/ChannelsPage';
+import ChannelMappingPage from './components/ChannelMappingPage';
+import NavigationBar from './components/NavigationBar'; // Import the NavigationBar component
 import { FieldOption } from './types/mapping';
 import { XMLData, XMLField, XMLMapping } from './types/xml';
 import { XMLManager } from './services/XMLManager';
@@ -275,9 +277,9 @@ function MainApp() {
     }
   }, [xmlManager, mappings]);
 
-  // Handle shop deletion
   const handleDeleteShop = () => {
     if (selectedShopId) {
+      console.log("Selected shop ID to delete:", selectedShopId); // Debugging
       deleteShop(selectedShopId); // Delete the shop
       setSelectedShopId(null); // Redirect to the home page
       setShowSettings(false); // Close the settings view
@@ -292,6 +294,8 @@ function MainApp() {
         draggable: true,
         progress: undefined,
       });
+    } else {
+      console.log("No shop selected for deletion."); // Debugging
     }
   };
 
@@ -304,6 +308,7 @@ function MainApp() {
         const xmlDoc = parser.parseFromString(selectedShop.xmlContent, 'text/xml');
         const items = xmlDoc.getElementsByTagName('item');
         const schema = new Map<string, { required?: boolean; helpText?: string }>();
+
         Array.from(items).forEach((item) => {
           Array.from(item.children).forEach((child) => {
             if (!schema.has(child.nodeName)) {
@@ -328,7 +333,7 @@ function MainApp() {
         const schemaArray = Array.from(schema.entries()).map(([name, props]) => ({
           name,
           ...props,
-        }));
+        })); // <-- Fixed: Added the missing parenthesis here
 
         handleFieldsExtracted({ items: itemsData, schema: schemaArray });
       }
@@ -385,44 +390,14 @@ function MainApp() {
     <div className="min-h-screen bg-gray-100 flex">
       {/* Side Navigation Bar (Visible only when a shop is selected) */}
       {selectedShopId && (
-        <div className="w-64 bg-white shadow-md p-4">
-          <h2 className="text-lg font-semibold mb-4">Navigation</h2>
-          <button
-            onClick={handleBackClick}
-            className="w-full flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors mb-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Shops
-          </button>
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="w-full flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors mb-4"
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </button>
-          <button
-            onClick={() => setShowCommentsDialog(true)}
-            className="w-full flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors mb-4"
-          >
-            <MessageCircle className="h-4 w-4" />
-            Comments
-          </button>
-          <button
-            onClick={() => navigate('/internal-fields')}
-            className="w-full flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors mb-4"
-          >
-            <List className="h-4 w-4" />
-            Internal Fields
-          </button>
-          <button
-            onClick={() => navigate('/channels')}
-            className="w-full flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors mb-4"
-          >
-            <List className="h-4 w-4" />
-            Channels
-          </button>
-        </div>
+        <NavigationBar
+          selectedShopId={selectedShopId}
+          shops={shops}
+          setShowCommentsDialog={setShowCommentsDialog}
+          setShowSettings={setShowSettings}
+          handleBackClick={handleBackClick}
+          showSettings={showSettings}
+        />
       )}
 
       {/* Main Content */}
@@ -435,10 +410,10 @@ function MainApp() {
         ) : (
           <>
             {/* Shop Name */}
-            <h2 className="text-2xl font-semibold mb-4">
+            {/* <h2 className="text-2xl font-semibold mb-4">
               {shops.find((shop) => shop.id === selectedShopId)?.name}
               <h6 className="text-2xl font-semibold mt-4">Shop ID: {selectedShopId}</h6>
-            </h2>
+            </h2> */}
 
             {/* Comments Dialog */}
             {showCommentsDialog && (
