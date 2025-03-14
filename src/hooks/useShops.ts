@@ -178,7 +178,7 @@ const useShops = () => {
         deleteComment,
         addABTest,
         toggleLock,
-        addChannel, // Add this function
+        addChannel,
     };
 };
 

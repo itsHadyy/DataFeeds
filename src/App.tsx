@@ -137,11 +137,10 @@ function MainApp() {
     );
   }, []);
 
-  // Handle save and proceed button click
   const handleSaveAndProceed = useCallback(() => {
     console.log('Changes saved and proceeding to channels');
     setHasUnsavedChanges(false);
-    setMappings(tempMappings);
+    setMappings(tempMappings); // Update mappings state
     setComments(tempComments);
     setMappingFields(tempMappingFields);
     setLastSavedState({ mappings: tempMappings, comments: tempComments, mappingFields: tempMappingFields });
@@ -215,7 +214,7 @@ function MainApp() {
 
   // Extract fields from uploaded XML
   const handleFieldsExtracted = useCallback((data: XMLData) => {
-    xmlManager.setData(data);
+    xmlManager.setData(data); // Set XML data in xmlManager
     const uniqueFields = new Set(data.items.flatMap((item) => Object.keys(item)));
     const newMappingFields = Array.from(uniqueFields).map((field) => ({
       name: field,
@@ -245,25 +244,40 @@ function MainApp() {
     }
   };
 
-  // Apply field mappings and generate XML
+
+  const [modifiedXMLString, setModifiedXMLString] = useState<string | null>(null);
+
   const handleApplyChanges = useCallback(() => {
-    console.log('Applying changes...');
+    console.log('Applying changes...'); // Debugging
     const xmlData = xmlManager.getData();
-    console.log('XML Data:', xmlData);
-    if (!xmlData || mappings.length === 0) {
-      console.error('No XML data or mappings found.');
+    console.log('XML Data:', xmlData); // Debugging
+    if (!xmlData || tempMappings.length === 0) {
+      console.error('No XML data or mappings found.'); // Debugging
+      toast.error('No XML data or mappings available.', {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
       return;
     }
-    console.log('Mappings:', mappings);
-    const updatedData = xmlManager.applyMappings(mappings);
-    console.log('Updated Data:', updatedData);
+
+    console.log('Mappings:', tempMappings); // Debugging
+    const updatedData = xmlManager.applyMappings(tempMappings);
+    console.log('Updated Data:', updatedData); // Debugging
     if (updatedData) {
       const xmlString = xmlManager.generateXML(updatedData.items);
-      console.log('Generated XML:', xmlString);
-      xmlManager.downloadXML(xmlString);
+      console.log('Generated XML:', xmlString); // Debugging
 
-      // Show a success toast notification
-      toast.success('XML applied and downloaded successfully!', {
+      // Save the modified XML string to state
+      setModifiedXMLString(xmlString);
+
+      // Trigger the download
+      xmlManager.downloadXML(xmlString);
+      toast.success('XML file downloaded successfully!', {
         position: 'top-right',
         autoClose: 3000,
         hideProgressBar: false,
@@ -273,9 +287,9 @@ function MainApp() {
         progress: undefined,
       });
     } else {
-      console.error('Failed to apply mappings.');
+      console.error('Failed to apply mappings.'); // Debugging
     }
-  }, [xmlManager, mappings]);
+  }, [xmlManager, tempMappings]);
 
   const handleDeleteShop = () => {
     if (selectedShopId) {
@@ -298,6 +312,21 @@ function MainApp() {
       console.log("No shop selected for deletion."); // Debugging
     }
   };
+
+  // Save to localStorage
+  useEffect(() => {
+    if (modifiedXMLString) {
+      localStorage.setItem('modifiedXMLString', modifiedXMLString);
+    }
+  }, [modifiedXMLString]);
+
+  // Load from localStorage on component mount
+  useEffect(() => {
+    const savedXMLString = localStorage.getItem('modifiedXMLString');
+    if (savedXMLString) {
+      setModifiedXMLString(savedXMLString);
+    }
+  }, []);
 
   // Load XML content for the selected shop
   useEffect(() => {
@@ -402,6 +431,7 @@ function MainApp() {
 
       {/* Main Content */}
       <div className="flex-1 p-8 overflow-y-auto">
+
         <ToastContainer />
 
         {/* Shop Selection */}
@@ -416,6 +446,19 @@ function MainApp() {
             </h2> */}
 
             {/* Comments Dialog */}
+
+            <button
+              onClick={handleApplyChanges}
+              disabled={tempMappings.length === 0}
+              className={`px-4 py-2 mb-6 ${tempMappings.length === 0
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-green-600 text-white hover:bg-green-700'
+                } rounded-md`}
+            >
+              <Save className="h-4 w-4 inline-block mr-2" />
+              Apply & Download
+            </button>
+
             {showCommentsDialog && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white p-6 rounded-lg w-full max-w-2xl">
@@ -491,6 +534,16 @@ function MainApp() {
                     />
                   </div>
                 </div>
+
+                {modifiedXMLString && (
+                  <button
+                    onClick={() => xmlManager.downloadXML(modifiedXMLString)}
+                    className="px-4 py-2 mb-6 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    <Save className="h-4 w-4 inline-block mr-2" />
+                    Download Again
+                  </button>
+                )}
 
                 {/* Re-upload XML */}
                 <div className="mb-6">
