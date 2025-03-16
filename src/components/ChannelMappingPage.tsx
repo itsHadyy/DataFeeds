@@ -6,7 +6,7 @@ import useShops from '../hooks/useShops';
 import NavigationBar from '../components/NavigationBar';
 import MappingField from '../components/MappingField'; // Import the MappingField component
 import { XMLManager } from '../services/XMLManager';
-import { XMLMapping } from '../types/xml';
+import { XMLMapping, XMLData } from '../types/xml';
 
 const ChannelMappingPage = () => {
   const { shopId, channelId } = useParams<{ shopId: string; channelId: string }>();

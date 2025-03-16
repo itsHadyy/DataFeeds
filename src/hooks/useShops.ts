@@ -151,22 +151,18 @@ const useShops = () => {
     }, []);
 
     // Add a channel to a shop
-    const addChannel = useCallback((shopId: string, channelName: string) => {
-        setShops((prevShops) => {
-            const newShops = prevShops.map((shop) =>
+    const addChannel = (shopId: string, channelName: string) => {
+        setShops((prev) =>
+            prev.map((shop) =>
                 shop.id === shopId
                     ? {
                         ...shop,
-                        channels: [
-                            ...(shop.channels || []),
-                            { id: nanoid(), name: channelName },
-                        ],
+                        channels: [...(shop.channels || []), { id: nanoid(), name: channelName }],
                     }
                     : shop
-            );
-            return newShops;
-        });
-    }, [nanoid]);
+            )
+        );
+    };
 
     return {
         shops,

@@ -5,9 +5,47 @@ import 'react-toastify/dist/ReactToastify.css';
 import NavigationBar from '../components/NavigationBar';
 import useShops from '../hooks/useShops';
 
+// Define types for channel schemas
+interface ChannelSchemaField {
+    id: string;
+    name: string;
+    required: boolean;
+}
+
+interface ChannelSchemas {
+    [key: string]: ChannelSchemaField[];
+}
+
+// Define channel-specific schemas
+const channelSchemas: ChannelSchemas = {
+    facebook: [
+        { id: 'title', name: 'Title', required: true },
+        { id: 'description', name: 'Description', required: true },
+        { id: 'price', name: 'Price', required: true },
+        { id: 'image_link', name: 'Image Link', required: true },
+    ],
+    google: [
+        { id: 'id', name: 'ID', required: true },
+        { id: 'title', name: 'Title', required: true },
+        { id: 'price', name: 'Price', required: true },
+        { id: 'availability', name: 'Availability', required: true },
+    ],
+    snapchat: [
+        { id: 'item_name', name: 'Item Name', required: true },
+        { id: 'item_price', name: 'Item Price', required: true },
+        { id: 'item_image_url', name: 'Item Image URL', required: true },
+    ],
+    tiktok: [
+        { id: 'product_id', name: 'Product ID', required: true },
+        { id: 'product_name', name: 'Product Name', required: true },
+        { id: 'product_price', name: 'Product Price', required: true },
+        { id: 'product_image', name: 'Product Image', required: true },
+    ],
+};
+
 const ChannelsPage = () => {
     const { shopId } = useParams<{ shopId: string }>();
-    const { shops, addChannel } = useShops();
+    const { shops, addChannel, updateShop } = useShops();
     const navigate = useNavigate();
     const [newChannelName, setNewChannelName] = useState('');
     const [selectedChannelId, setSelectedChannelId] = useState('');
@@ -25,10 +63,7 @@ const ChannelsPage = () => {
     ];
 
     // Combine basic channels and custom channels
-    const allChannels = [
-        ...basicChannels,
-        ...(selectedShop?.channels || []),
-    ];
+    const allChannels = [...basicChannels, ...(selectedShop?.channels || [])];
 
     // Handle creating a new channel
     const handleCreateChannel = () => {
@@ -59,7 +94,14 @@ const ChannelsPage = () => {
 
     // Handle selecting a channel
     const handleSelectChannel = (channelId: string) => {
-        setSelectedChannelId(channelId);
+        if (selectedShop) {
+            const updatedShop = {
+                ...selectedShop,
+                selectedChannelId: channelId, // Save the selected channel ID to the shop
+            };
+            updateShop(updatedShop); // Update the shop in the state
+            setSelectedChannelId(channelId); // Update local state
+        }
     };
 
     // Handle proceeding to the next step
@@ -83,6 +125,11 @@ const ChannelsPage = () => {
     const handleBackClick = () => {
         navigate(-1);
     };
+
+    // Get the schema for the selected channel
+    const selectedChannelSchema: ChannelSchemaField[] = selectedChannelId
+        ? channelSchemas[selectedChannelId as keyof typeof channelSchemas]
+        : [];
 
     return (
         <div className="min-h-screen bg-gray-100 flex">
@@ -119,6 +166,28 @@ const ChannelsPage = () => {
                     </select>
                 </div>
 
+                {/* Display Channel Schema */}
+                {selectedChannelSchema.length > 0 && (
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+                        <h2 className="text-lg font-semibold mb-4">Channel Schema</h2>
+                        <div className="space-y-4">
+                            {selectedChannelSchema.map((field) => (
+                                <div key={field.id} className="flex items-center justify-between">
+                                    <span className="text-sm font-medium text-gray-700">
+                                        {field.name} {field.required && <span className="text-red-500">*</span>}
+                                    </span>
+                                    <button
+                                        onClick={() => console.log('Add mapping for:', field.id)}
+                                        className="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100"
+                                    >
+                                        Add Mapping
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Form to create a new channel */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
                     <h2 className="text-lg font-semibold mb-4">Create New Channel</h2>
@@ -141,9 +210,8 @@ const ChannelsPage = () => {
                 <button
                     onClick={handleProceed}
                     disabled={!selectedChannelId}
-                    className={`px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                        !selectedChannelId ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
+                    className={`px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 ${!selectedChannelId ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
                 >
                     Proceed
                 </button>
