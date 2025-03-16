@@ -19,7 +19,7 @@ interface Shop {
     comments?: Comment[];
     abTests?: string[];
     isLocked?: boolean;
-    channels?: Channel[]; // Add channels to the Shop interface
+    channels?: Channel[];
 }
 
 const STORAGE_KEY = "shops";
@@ -27,60 +27,62 @@ const STORAGE_KEY = "shops";
 const useShops = () => {
     const [shops, setShops] = useState<Shop[]>(() => {
         const storedShops = localStorage.getItem(STORAGE_KEY);
-        return storedShops ? JSON.parse(storedShops) : [];
+        if (storedShops) {
+            try {
+                const parsedShops = JSON.parse(storedShops);
+                if (Array.isArray(parsedShops)) {
+                    return parsedShops;
+                }
+            } catch (err) {
+                console.error("Error parsing stored shops:", err);
+            }
+        }
+        return [];
     });
 
-    // Save to localStorage whenever shops change
     useEffect(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(shops));
     }, [shops]);
 
     const nanoid = customAlphabet("1234567890abcdef", 5);
 
-    // Add a shop (with optional XML)
     const addShop = useCallback((name: string, xmlContent?: string) => {
-        setShops((prevShops) => {
-            const newShop = { id: nanoid(), name, xmlContent, productCount: 0, channels: [] };
-            const newShops = [...prevShops, newShop];
-            return newShops;
-        });
+        setShops((prevShops) => [
+            ...prevShops,
+            { id: nanoid(), name, xmlContent, productCount: 0, channels: [] },
+        ]);
     }, [nanoid]);
 
     const deleteShop = useCallback((shopId: string) => {
-        console.log("Deleting shop with ID:", shopId); // Debugging
-        setShops((prevShops) => {
-            const newShops = prevShops.filter((shop) => shop.id !== shopId);
-            console.log("Updated shops list:", newShops); // Debugging
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(newShops)); // Update localStorage
-            return newShops;
-        });
+        setShops((prevShops) => prevShops.filter((shop) => shop.id !== shopId));
     }, []);
 
-    // Update a shop name
     const updateShop = useCallback((shopId: string, newName: string) => {
-        setShops((prevShops) => {
-            const newShops = prevShops.map((shop) =>
+        setShops((prevShops) =>
+            prevShops.map((shop) =>
                 shop.id === shopId ? { ...shop, name: newName } : shop
-            );
-            return newShops;
-        });
+            )
+        );
     }, []);
 
-    // Attach an XML file to a shop and update product count
     const uploadXMLToShop = useCallback((shopId: string, xmlContent: string) => {
-        setShops((prevShops) => {
-            const newShops = prevShops.map((shop) => {
-                if (shop.id === shopId) {
-                    const productCount = countProductsInXML(xmlContent); // Count products in XML
-                    return { ...shop, xmlContent, productCount };
-                }
-                return shop;
-            });
-            return newShops;
-        });
+        try {
+            const productCount = countProductsInXML(xmlContent);
+            setShops((prevShops) =>
+                prevShops.map((shop) =>
+                    shop.id === shopId ? { ...shop, xmlContent, productCount } : shop
+                )
+            );
+        } catch (err) {
+            // Type guard to check if err is an instance of Error
+            if (err instanceof Error) {
+                console.error(err.message);
+            } else {
+                console.error("An unknown error occurred:", err);
+            }
+        }
     }, []);
 
-    // Helper function to count products in XML
     const countProductsInXML = (xmlContent: string): number => {
         try {
             const parser = new DOMParser();
@@ -89,13 +91,13 @@ const useShops = () => {
             return items.length;
         } catch (err) {
             console.error("Error parsing XML:", err);
-            return 0;
+            throw new Error("Failed to parse XML. Please ensure the file is valid.");
         }
     };
 
     const addComment = useCallback((shopId: string, comment: string) => {
-        setShops((prevShops) => {
-            const newShops = prevShops.map((shop) =>
+        setShops((prevShops) =>
+            prevShops.map((shop) =>
                 shop.id === shopId
                     ? {
                         ...shop,
@@ -105,53 +107,42 @@ const useShops = () => {
                         ],
                     }
                     : shop
-            );
-            return newShops;
-        });
+            )
+        );
     }, []);
 
     const deleteComment = useCallback((shopId: string, commentIndex: number) => {
-        setShops((prevShops) => {
-            const newShops = prevShops.map((shop) =>
+        setShops((prevShops) =>
+            prevShops.map((shop) =>
                 shop.id === shopId
                     ? {
                         ...shop,
-                        comments: shop.comments?.filter(
-                            (_, index) => index !== commentIndex
-                        ),
+                        comments: shop.comments?.filter((_, index) => index !== commentIndex),
                     }
                     : shop
-            );
-            return newShops;
-        });
+            )
+        );
     }, []);
 
-    // Add A/B test to a shop
     const addABTest = useCallback((shopId: string, abTest: string) => {
-        setShops((prevShops) => {
-            const newShops = prevShops.map((shop) =>
+        setShops((prevShops) =>
+            prevShops.map((shop) =>
                 shop.id === shopId
                     ? { ...shop, abTests: [...(shop.abTests || []), abTest] }
                     : shop
-            );
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(newShops));
-            return newShops;
-        });
+            )
+        );
     }, []);
 
-    // Toggle lock state for a shop
     const toggleLock = useCallback((shopId: string) => {
-        setShops((prevShops) => {
-            const newShops = prevShops.map((shop) =>
+        setShops((prevShops) =>
+            prevShops.map((shop) =>
                 shop.id === shopId ? { ...shop, isLocked: !shop.isLocked } : shop
-            );
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(newShops));
-            return newShops;
-        });
+            )
+        );
     }, []);
 
-    // Add a channel to a shop
-    const addChannel = (shopId: string, channelName: string) => {
+    const addChannel = useCallback((shopId: string, channelName: string) => {
         setShops((prev) =>
             prev.map((shop) =>
                 shop.id === shopId
@@ -162,7 +153,44 @@ const useShops = () => {
                     : shop
             )
         );
-    };
+    }, [nanoid]);
+
+    const deleteChannel = useCallback((shopId: string, channelId: string) => {
+        setShops((prevShops) =>
+            prevShops.map((shop) =>
+                shop.id === shopId
+                    ? {
+                        ...shop,
+                        channels: shop.channels?.filter((channel) => channel.id !== channelId),
+                    }
+                    : shop
+            )
+        );
+    }, []);
+
+    const updateChannel = useCallback((shopId: string, channelId: string, newName: string) => {
+        setShops((prevShops) =>
+            prevShops.map((shop) =>
+                shop.id === shopId
+                    ? {
+                        ...shop,
+                        channels: shop.channels?.map((channel) =>
+                            channel.id === channelId ? { ...channel, name: newName } : channel
+                        ),
+                    }
+                    : shop
+            )
+        );
+    }, []);
+
+    const clearShops = useCallback(() => {
+        setShops([]);
+        localStorage.removeItem(STORAGE_KEY);
+    }, []);
+
+    const getShopById = useCallback((shopId: string): Shop | undefined => {
+        return shops.find((shop) => shop.id === shopId);
+    }, [shops]);
 
     return {
         shops,
@@ -175,6 +203,10 @@ const useShops = () => {
         addABTest,
         toggleLock,
         addChannel,
+        deleteChannel,
+        updateChannel,
+        clearShops,
+        getShopById,
     };
 };
 
