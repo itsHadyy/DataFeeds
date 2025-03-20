@@ -1,106 +1,92 @@
-import useShops from '../hooks/useShops'; // Import the hook
-import React, { useState, useEffect } from "react";
+// ChannelsPage.tsx
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import useShops from '../hooks/useShops';
 
-const ChannelsPage: React.FC<{ shopId: string }> = ({ shopId }) => {
-    const { shops, getShopById, addChannel, updateChannel, deleteChannel } = useShops();
+const ChannelsPage: React.FC = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const searchParams = new URLSearchParams(location.search);
+    const shopId = searchParams.get('shopId');
+
+    const { getShopById } = useShops();
     const shop = getShopById(shopId!);
-
-    useEffect(() => {
-        console.log("Shops:", shops); // Debugging
-        console.log("Shop found:", shop); // Debugging
-    }, [shops, shop]);
 
     if (!shop) {
         return <div>Shop not found. Shop ID: {shopId}</div>;
     }
 
-    // State for adding/editing channels
-    const [newChannelName, setNewChannelName] = useState("");
-    const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
-    const [editingChannelName, setEditingChannelName] = useState("");
+    const predefinedChannels = [
+        { id: 'facebook', name: 'Facebook Product Ads' },
+        { id: 'google', name: 'Google' },
+        { id: 'snapchat', name: 'Snapchat' },
+        { id: 'tiktok', name: 'TikTok' },
+    ];
 
-    // Handle adding a new channel
-    const handleAddChannel = () => {
-        if (newChannelName.trim()) {
-            addChannel(shopId, newChannelName);
-            setNewChannelName(""); // Clear input after adding
-        }
-    };
+    const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
 
-    // Handle starting to edit a channel
-    const startEditingChannel = (channelId: string, channelName: string) => {
-        setEditingChannelId(channelId);
-        setEditingChannelName(channelName);
-    };
-
-    // Handle saving an edited channel
-    const handleSaveEditedChannel = () => {
-        if (editingChannelId && editingChannelName.trim()) {
-            updateChannel(shopId, editingChannelId, editingChannelName);
-            setEditingChannelId(null); // Exit edit mode
-            setEditingChannelName(""); // Clear input
-        }
-    };
-
-    // Handle deleting a channel
-    const handleDeleteChannel = (channelId: string) => {
-        if (window.confirm("Are you sure you want to delete this channel?")) {
-            deleteChannel(shopId, channelId);
+    const handleChannelSelect = () => {
+        if (selectedChannel) {
+            navigate(`/channel-mapping/${selectedChannel}?shopId=${shopId}`);
+        } else {
+            toast.error("Please select a channel.");
         }
     };
 
     return (
-        <div>
-            <h1>Channels for Shop: {shop.name}</h1>
-            <h2>Shop ID: {shopId}</h2>
+        <div className="p-4">
+            <ToastContainer />
+            <h1 className="text-2xl font-bold mb-4">Channels for Shop: {shop.name}</h1>
+            <h2 className="text-lg text-gray-600 mb-6">Shop ID: {shopId}</h2>
 
-            {/* Add Channel Section */}
-            <div>
-                <h3>Add New Channel</h3>
-                <input
-                    type="text"
-                    value={newChannelName}
-                    onChange={(e) => setNewChannelName(e.target.value)}
-                    placeholder="Enter channel name"
-                />
-                <button onClick={handleAddChannel}>Add Channel</button>
+            <div className="mb-8">
+                <h3 className="text-xl font-semibold mb-4">Select a Channel</h3>
+                <select
+                    value={selectedChannel || ''}
+                    onChange={(e) => setSelectedChannel(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+                >
+                    <option value="">Select Channel</option>
+                    {predefinedChannels.map((channel) => (
+                        <option key={channel.id} value={channel.id}>
+                            {channel.name}
+                        </option>
+                    ))}
+                </select>
+                <button
+                    onClick={handleChannelSelect}
+                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                    Map Channel
+                </button>
             </div>
 
-            {/* List of Channels */}
-            <div>
-                <h3>Existing Channels</h3>
-                {shop.channels?.length ? (
-                    <ul>
-                        {shop.channels.map((channel) => (
-                            <li key={channel.id}>
-                                {editingChannelId === channel.id ? (
-                                    // Edit Mode
-                                    <div>
-                                        <input
-                                            type="text"
-                                            value={editingChannelName}
-                                            onChange={(e) => setEditingChannelName(e.target.value)}
-                                        />
-                                        <button onClick={handleSaveEditedChannel}>Save</button>
-                                        <button onClick={() => setEditingChannelId(null)}>Cancel</button>
-                                    </div>
-                                ) : (
-                                    // View Mode
-                                    <div>
-                                        <span>{channel.name}</span>
-                                        <button onClick={() => startEditingChannel(channel.id, channel.name)}>
-                                            Edit
-                                        </button>
-                                        <button onClick={() => handleDeleteChannel(channel.id)}>Delete</button>
-                                    </div>
-                                )}
-                            </li>
-                        ))}
+            {shop.mappedChannels && shop.mappedChannels.length > 0 ? (
+                <div className="mt-8">
+                    <h3 className="text-xl font-semibold mb-4">Previously Mapped Channels</h3>
+                    <ul className="space-y-2">
+                        {shop.mappedChannels.map((channelId) => {
+                            const channel = predefinedChannels.find((c) => c.id === channelId);
+                            return (
+                                channel && (
+                                    <li
+                                        key={channelId}
+                                        className="p-4 border border-gray-200 rounded-md bg-white shadow-sm"
+                                    >
+                                        {channel.name}
+                                    </li>
+                                )
+                            );
+                        })}
                     </ul>
-                ) : (
-                    <p>No channels found.</p>
-                )}
-            </div>
+                </div>
+            ) : (
+                <div className="mt-8">
+                    <p className="text-gray-500">No channels have been mapped yet.</p>
+                </div>
+            )}
         </div>
     );
 };

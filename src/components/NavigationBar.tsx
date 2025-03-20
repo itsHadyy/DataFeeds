@@ -18,7 +18,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     setShowCommentsDialog,
     setShowSettings,
     handleBackClick,
-    showSettings, // Add this line
+    showSettings,
 }) => {
     const navigate = useNavigate();
 
@@ -43,7 +43,13 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                 Internal Fields
             </button>
             <button
-                onClick={() => navigate('/channels')}
+                onClick={() => {
+                    if (selectedShopId) {
+                        navigate(`/channels?shopId=${selectedShopId}`);
+                    } else {
+                        navigate('/channels');
+                    }
+                }}
                 className="w-full flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors mb-4"
             >
                 <List className="h-4 w-4" />
@@ -57,7 +63,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                 Comments
             </button>
             <button
-                onClick={() => setShowSettings(!showSettings)} // Use showSettings here
+                onClick={() => setShowSettings(!showSettings)}
                 className="w-full flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors mb-4"
             >
                 <Settings className="h-4 w-4" />

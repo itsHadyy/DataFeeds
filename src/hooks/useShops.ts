@@ -20,6 +20,7 @@ interface Shop {
     abTests?: string[];
     isLocked?: boolean;
     channels?: Channel[];
+    mappedChannels?: string[];
 }
 
 const STORAGE_KEY = "shops";
@@ -168,6 +169,18 @@ const useShops = () => {
         );
     }, []);
 
+    const updateMappedChannels = useCallback((shopId: string, channelId: string) => {
+        setShops((prevShops) =>
+            prevShops.map((shop) => {
+                if (shop.id === shopId) {
+                    const mappedChannels = shop.mappedChannels ? [...shop.mappedChannels, channelId] : [channelId];
+                    return { ...shop, mappedChannels: [...new Set(mappedChannels)] }; // Ensure unique channels
+                }
+                return shop;
+            })
+        );
+    }, []);
+
     const updateChannel = useCallback((shopId: string, channelId: string, newName: string) => {
         setShops((prevShops) =>
             prevShops.map((shop) =>
@@ -207,6 +220,7 @@ const useShops = () => {
         updateChannel,
         clearShops,
         getShopById,
+        updateMappedChannels,
     };
 };
 

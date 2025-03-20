@@ -160,7 +160,11 @@ function MainApp() {
     setTimeout(() => setFeedbackMessage(null), 3000);
 
     // Navigate to the channels page
-    navigate('/channels');
+    if (selectedShopId) {
+      navigate(`/channels?shopId=${selectedShopId}`);
+    } else {
+      navigate('/channels');
+    }
   }, [tempMappings, tempComments, tempMappingFields, navigate]);
 
   // Handle discard changes button click
@@ -243,7 +247,6 @@ function MainApp() {
       deleteComment(selectedShopId, commentIndex);
     }
   };
-
 
   const [modifiedXMLString, setModifiedXMLString] = useState<string | null>(null);
 
@@ -417,21 +420,18 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      {/* Side Navigation Bar (Visible only when a shop is selected) */}
-      {selectedShopId && (
-        <NavigationBar
-          selectedShopId={selectedShopId}
-          shops={shops}
-          setShowCommentsDialog={setShowCommentsDialog}
-          setShowSettings={setShowSettings}
-          handleBackClick={handleBackClick}
-          showSettings={showSettings}
-        />
-      )}
+      {/* Navigation Bar (Always visible) */}
+      <NavigationBar
+        selectedShopId={selectedShopId}
+        shops={shops}
+        setShowCommentsDialog={setShowCommentsDialog}
+        setShowSettings={setShowSettings}
+        handleBackClick={handleBackClick}
+        showSettings={showSettings}
+      />
 
       {/* Main Content */}
       <div className="flex-1 p-8 overflow-y-auto">
-
         <ToastContainer />
 
         {/* Shop Selection */}
@@ -446,19 +446,6 @@ function MainApp() {
             </h2> */}
 
             {/* Comments Dialog */}
-
-            <button
-              onClick={handleApplyChanges}
-              disabled={tempMappings.length === 0}
-              className={`px-4 py-2 mb-6 ${tempMappings.length === 0
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-green-600 text-white hover:bg-green-700'
-                } rounded-md`}
-            >
-              <Save className="h-4 w-4 inline-block mr-2" />
-              Apply & Download
-            </button>
-
             {showCommentsDialog && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white p-6 rounded-lg w-full max-w-2xl">
