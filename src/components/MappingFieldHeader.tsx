@@ -16,8 +16,6 @@ export const MappingFieldHeader: React.FC<MappingFieldHeaderProps> = ({
   onABTestClick,
   onToggleLock,
 }) => {
-  const [comment, setComment] = useState<string>(''); // State for comment input
-  const [abTest, setABTest] = useState<string>(''); // State for A/B test input
 
   return (
     <div className="flex items-center justify-between mb-6 border-b pb-4">

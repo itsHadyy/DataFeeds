@@ -251,11 +251,11 @@ function MainApp() {
   const [modifiedXMLString, setModifiedXMLString] = useState<string | null>(null);
 
   const handleApplyChanges = useCallback(() => {
-    console.log('Applying changes...'); // Debugging
+    console.log('Applying changes...');
     const xmlData = xmlManager.getData();
-    console.log('XML Data:', xmlData); // Debugging
+    console.log('XML Data:', xmlData);
     if (!xmlData || tempMappings.length === 0) {
-      console.error('No XML data or mappings found.'); // Debugging
+      console.error('No XML data or mappings found.');
       toast.error('No XML data or mappings available.', {
         position: 'top-right',
         autoClose: 3000,
@@ -268,19 +268,18 @@ function MainApp() {
       return;
     }
 
-    console.log('Mappings:', tempMappings); // Debugging
+    console.log('Mappings:', tempMappings);
     const updatedData = xmlManager.applyMappings(tempMappings);
-    console.log('Updated Data:', updatedData); // Debugging
+    console.log('Updated Data:', updatedData);
     if (updatedData) {
       const xmlString = xmlManager.generateXML(updatedData.items);
-      console.log('Generated XML:', xmlString); // Debugging
+      console.log('Generated XML:', xmlString);
 
       // Save the modified XML string to state
       setModifiedXMLString(xmlString);
 
-      // Trigger the download
-      xmlManager.downloadXML(xmlString);
-      toast.success('XML file downloaded successfully!', {
+      // Show a success notification (without download)
+      toast.success('Changes applied successfully!', {
         position: 'top-right',
         autoClose: 3000,
         hideProgressBar: false,
@@ -290,29 +289,45 @@ function MainApp() {
         progress: undefined,
       });
     } else {
-      console.error('Failed to apply mappings.'); // Debugging
+      console.error('Failed to apply mappings.');
+      toast.error('Failed to apply mappings.', {
+        position: 'top-right',
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     }
   }, [xmlManager, tempMappings]);
 
   const handleDeleteShop = () => {
     if (selectedShopId) {
-      console.log("Selected shop ID to delete:", selectedShopId); // Debugging
-      deleteShop(selectedShopId); // Delete the shop
-      setSelectedShopId(null); // Redirect to the home page
-      setShowSettings(false); // Close the settings view
+      const confirmDelete = window.confirm(
+        'Are you sure you want to delete this shop? This action cannot be undone.'
+      );
 
-      // Show a success toast notification
-      toast.success('Shop deleted successfully!', {
-        position: 'top-right',
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
+      if (confirmDelete) {
+        console.log('Selected shop ID to delete:', selectedShopId);
+        deleteShop(selectedShopId);
+        setSelectedShopId(null);
+        setShowSettings(false);
+
+        toast.success('Shop deleted successfully!', {
+          position: 'top-right',
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
+      } else {
+        console.log('Shop deletion cancelled by user.');
+      }
     } else {
-      console.log("No shop selected for deletion."); // Debugging
+      console.log('No shop selected for deletion.');
     }
   };
 
@@ -372,34 +387,37 @@ function MainApp() {
     }
   }, [selectedShopId, shops, handleFieldsExtracted]);
 
-  // Handle comment button click
-  const handleCommentClick = (fieldName: string) => {
+  const [commentFieldName, setCommentFieldName] = useState<string>('');
+
+  const handleCommentClick = (fieldName?: string) => {
     console.log('Comments button clicked for field:', fieldName);
-    const comment = prompt('Enter your comment:');
-    if (comment !== null) {
-      setTempComments((prev) => ({
-        ...prev,
-        [fieldName]: comment,
-      }));
-      setHasUnsavedChanges(true);
+    if (fieldName) {
+      setCommentFieldName(fieldName);
+      setNewComment(fieldName + '');
+    } else {
+      setCommentFieldName('');
+      setNewComment('');
     }
+    setShowCommentsDialog(true);
   };
 
-  // Handle preview button click
   const handlePreviewClick = (field: XMLField) => {
     console.log('Preview button clicked for field:', field.name);
     setPreviewField(field);
 
-    // Parse the XML data to extract preview data
     const xmlData = xmlManager.getData();
-    if (xmlData) {
+    if (xmlData && xmlData.items) {
+      console.log('xmlData.items:', xmlData.items); // Debugging
+
       const previewRows = xmlData.items.map((item) => ({
-        productId: item.productId || 'N/A',
-        title: item.title || 'N/A',
+        productId: item.id || 'N/A', // Adjusted based on example
+        title: item.productName || 'N/A', // Adjusted based on example
         fieldsUsedInMapping: field.name,
         channelField: item[field.name] || 'N/A',
       }));
       setPreviewData(previewRows);
+    } else {
+      setPreviewData([]);
     }
 
     setShowPreviewDialog(true);
@@ -608,16 +626,23 @@ function MainApp() {
                     onClick={handleDiscardChanges}
                     className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
                   >
-                    <Undo className="h-4 w-4 inline-block mr-2" />
-                    Discard Changes
+                    Discard
                   </button>
                   <button
-                    onClick={handleSaveAndProceed}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    onClick={handleApplyChanges}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-blue-700"
                   >
-                    <Save className="h-4 w-4 inline-block mr-2" />
-                    Save & Proceed
+                    Save & Apply
                   </button>
+                  {modifiedXMLString && (
+                    <button
+                      onClick={() => xmlManager.downloadXML(modifiedXMLString)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
+                      <Save className="h-4 w-4 inline-block mr-2" />
+                      Download
+                    </button>
+                  )}
                 </div>
               </>
             )}
@@ -639,22 +664,10 @@ function MainApp() {
                     <tbody>
                       {currentItems.map((row, index) => (
                         <tr key={index} className="hover:bg-gray-50">
-                          <td className="border border-gray-300 p-2">{row.productId}</td>
-                          <td className="border border-gray-300 p-2">{row.title}</td>
-                          <td className="border border-gray-300 p-2">{row.fieldsUsedInMapping}</td>
-                          <td className="border border-gray-300 p-2">
-                            <input
-                              type="text"
-                              value={row.channelField}
-                              onChange={(e) =>
-                                handleChannelFieldChange(
-                                  (currentPage - 1) * itemsPerPage + index,
-                                  e.target.value
-                                )
-                              }
-                              className="w-full px-2 py-1 border border-gray-300 rounded-md"
-                            />
-                          </td>
+                          <td className="border border-gray-300 p-2">{String(row.productId)}</td>
+                          <td className="border border-gray-300 p-2">{String(row.title)}</td>
+                          <td className="border border-gray-300 p-2">{String(row.fieldsUsedInMapping)}</td>
+                          <td className="border border-gray-300 p-2">{String(row.channelField)}</td>
                         </tr>
                       ))}
                     </tbody>

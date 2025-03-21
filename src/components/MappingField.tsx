@@ -13,7 +13,7 @@ interface MappingFieldProps {
   helpText?: string;
   onFieldChange: (mapping: XMLMapping) => void;
   onPreviewClick: () => void;
-  onCommentClick: () => void; // Updated to handle field-specific comments
+  onCommentClick: () => void;
   onABTestClick: () => void;
   onEditClick: () => void;
   optional?: boolean;

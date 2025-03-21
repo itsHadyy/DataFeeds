@@ -2,15 +2,6 @@ import React, { useState } from "react";
 import ShopManager from "./ShopManager";
 import useShops from "../hooks/useShops";
 import XMLUploader from "./XMLUploader";
-import {
-    DropdownMenu,
-    DropdownMenuTrigger,
-    DropdownMenuContent,
-    DropdownMenuItem,
-} from "@radix-ui/react-dropdown-menu";
-import { ChevronDownIcon } from "@radix-ui/react-icons";
-import { CopyIcon } from "@radix-ui/react-icons";
-import { EditIcon, SaveIcon, TrashIcon, CheckIcon } from "lucide-react";
 import { XMLManager } from "../services/XMLManager"; // Import XMLManager
 
 interface ShopDashboardProps {
@@ -44,20 +35,6 @@ const ShopDashboard: React.FC<ShopDashboardProps> = ({ onSelectShop }) => {
         xmlManager.setData(parsedData); // Initialize XMLManager with the parsed data
         const modifiedXML = xmlManager.generateXML(); // Generate modified XML
         return xmlManager.generateDownloadLink(modifiedXML); // Generate download link
-    };
-
-    const handleEditClick = (shopId: string, currentName: string) => {
-        setEditingShopId(shopId);
-        setEditedName(currentName);
-    };
-
-    const handleSaveEdit = (shopId: string) => {
-        updateShop(shopId, editedName);
-        setEditingShopId(null);
-    };
-
-    const handleCopyLink = (link: string) => {
-        navigator.clipboard.writeText(link);
     };
 
     const handleSelectShop = (shopId: string) => {

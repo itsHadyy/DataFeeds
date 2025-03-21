@@ -55,7 +55,13 @@ const useShops = () => {
     }, [nanoid]);
 
     const deleteShop = useCallback((shopId: string) => {
-        setShops((prevShops) => prevShops.filter((shop) => shop.id !== shopId));
+        console.log("Deleting shop with ID:", shopId);
+        setShops((prevShops) =>
+            prevShops.filter((shop) => {
+                console.log("Comparing shop ID:", shop.id);
+                return shop.id !== shopId;
+            })
+        );
     }, []);
 
     const updateShop = useCallback((shopId: string, newName: string) => {
