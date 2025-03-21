@@ -9,14 +9,80 @@ import MappingField from './MappingField';
 import { XMLField, XMLData, XMLMapping } from '../types/xml';
 import { FieldOption } from '../types/mapping';
 import { Save, Undo } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { XMLBuilder } from '../services/XMLBuilder';
 
-const channelSchemas: { [key: string]: string[] } = {
-  facebook: ['id', 'title', 'description', 'availability', 'condition', 'price', 'link', 'image_link', 'brand'],
-  google: ['g_id', 'g_title', 'g_description', 'g_availability', 'g_price', 'g_link', 'g_image_link'],
-  snapchat: ['s_id', 's_title', 's_description', 's_price', 's_image_link'],
-  tiktok: ['t_id', 't_title', 't_description', 't_price', 't_image_link'],
+const channelSchemas: { [key: string]: { name: string; optional?: boolean }[] } = {
+  facebook: [
+    { name: 'id' },
+    { name: 'title' },
+    { name: 'description' },
+    { name: 'availability' },
+    { name: 'condition' },
+    { name: 'price' },
+    { name: 'link' },
+    { name: 'image_link' },
+    { name: 'brand' },
+  ],
+  google: [
+    { name: 'g_id' },
+    { name: 'g_title' },
+    { name: 'g_description' },
+    { name: 'g_availability' },
+    { name: 'g_price' },
+    { name: 'g_link' },
+    { name: 'g_image_link' },
+  ],
+  snapchat: [
+    { name: 'id' },
+    { name: 'title' },
+    { name: 'description' },
+    { name: 'link' },
+    { name: 'image_link' },
+    { name: 'availability' },
+    { name: 'price' },
+    { name: 'brand, gtin, or mpn' },
+    { name: 'brand, gtin, or mpn', optional: true },
+  ],
+  tiktok: [
+    { name: 'sku_id' },
+    { name: 'title' },
+    { name: 'description' },
+    { name: 'availability' },
+    { name: 'condition' },
+    { name: 'price' },
+    { name: 'link' },
+    { name: 'image_link' },
+    { name: 'brand' },
+    { name: 'google_product_category', optional: true },
+    { name: 'video_link', optional: true },
+    { name: 'additional_image_link', optional: true },
+    { name: 'age_group' },
+    { name: 'color', optional: true },
+    { name: 'gender', optional: true },
+    { name: 'item_group_id', optional: true },
+    { name: 'material', optional: true },
+    { name: 'pattern', optional: true },
+    { name: 'product_type', optional: true },
+    { name: 'sale_price', optional: true },
+    { name: 'sale_price_effective_date', optional: true },
+    { name: 'shipping', optional: true },
+    { name: 'shipping_weight', optional: true },
+    { name: 'gtin', optional: true },
+    { name: 'mpn', optional: true },
+    { name: 'size', optional: true },
+    { name: 'tax', optional: true },
+    { name: 'ios_url', optional: true },
+    { name: 'android_url', optional: true },
+    { name: 'custom_label_0', optional: true },
+    { name: 'custom_label_1', optional: true },
+    { name: 'custom_label_2', optional: true },
+    { name: 'custom_label_3', optional: true },
+    { name: 'custom_label_4', optional: true },
+    { name: 'merchant_brand', optional: true },
+    { name: 'productHisEval', optional: true },
+  ],
 };
-
 const ChannelMappingPage: React.FC = () => {
   const { channelId } = useParams<{ channelId: string }>();
   const location = useLocation();
@@ -70,13 +136,15 @@ const ChannelMappingPage: React.FC = () => {
       }));
 
       xmlManager.setData({ items: itemsData, schema: schemaArray });
+
       const channelSchema = channelSchemas[channelId];
       if (channelSchema) {
         const newMappingFields = channelSchema.map((field) => ({
-          name: field,
+          name: field.name,
           value: '',
-          required: false,
+          required: !field.optional,
           helpText: '',
+          optional: field.optional,
         }));
         setMappingFields(newMappingFields);
         setTempMappingFields(newMappingFields);
@@ -150,24 +218,87 @@ const ChannelMappingPage: React.FC = () => {
     toast.info("Changes discarded.");
   }, [lastSavedState]);
 
+  const xmlBuilder = new XMLBuilder();
+
+  const handleDownload = useCallback(() => {
+    if (shop && xmlManager && channelId) {
+      const items = xmlManager.getData().items;
+      const channelSchema = channelSchemas[channelId];
+
+      // Generate XML using XMLBuilder
+      const xmlString = xmlBuilder.buildXML(items, tempMappings, channelSchema);
+
+      // Parse the generated XML string using XMLManager
+      const parsedXML = xmlManager.parseXMLString(xmlString);
+
+      // Apply mappings using XMLManager
+      const mappedXML = xmlManager.applyMappings(tempMappings);
+
+      // Generate the final XML using XMLManager's generateXML
+      const finalXMLString = xmlManager.generateXML(mappedXML.items);
+
+      // Download the final XML
+      const blob = new Blob([finalXMLString], { type: 'text/xml' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${shop.name}-${channelId}.xml`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } else {
+      toast.error("Could not generate XML.");
+    }
+  }, [xmlManager, tempMappings, shop, channelId, xmlBuilder]);
+
+  const handleRemap = (channelId: string) => {
+    navigate(`/channels?shopId=${shopId}`);
+  };
+
   return (
     <div className="p-4">
       <ToastContainer />
+      <button
+        onClick={handleRemap}
+        className="flex items-center gap-2 px-3 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm mb-4"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </button>
       <h1 className="text-2xl font-bold mb-4">Mapping for {channelId} - Shop: {shop.name}</h1>
       <h2 className="text-lg text-gray-600 mb-6">Shop ID: {shopId}</h2>
 
+
       {tempMappingFields.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          {tempMappingFields.map((field) => (
-            <MappingField
-              key={field.name}
-              fieldName={field.name}
-              fieldValue={field.value}
-              fieldOptions={getFieldOptions(xmlData)}
-              onFieldChange={(mapping) => handleFieldChange(field.name, mapping)}
-            />
-          ))}
+          <h3 className="text-lg font-semibold p-4">Required Fields</h3>
+          {tempMappingFields
+            .filter((field) => !field.optional)
+            .map((field) => (
+              <MappingField
+                key={field.name}
+                fieldName={field.name}
+                fieldValue={field.value}
+                fieldOptions={getFieldOptions(xmlData)}
+                onFieldChange={(mapping) => handleFieldChange(field.name, mapping)}
+              />
+            ))}
+
+          <h3 className="text-lg font-semibold p-4 mt-4">Optional Fields</h3>
+          {tempMappingFields
+            .filter((field) => field.optional)
+            .map((field) => (
+              <MappingField
+                key={field.name}
+                fieldName={field.name}
+                fieldValue={field.value}
+                fieldOptions={getFieldOptions(xmlData)}
+                onFieldChange={(mapping) => handleFieldChange(field.name, mapping)}
+              />
+            ))}
         </div>
+
       )}
 
       <div className="flex justify-end gap-4 mt-6">
@@ -184,6 +315,12 @@ const ChannelMappingPage: React.FC = () => {
         >
           <Save className="h-4 w-4 inline-block mr-2" />
           Save & Proceed
+        </button>
+        <button
+          onClick={handleDownload}
+          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+        >
+          Download XML
         </button>
       </div>
     </div>

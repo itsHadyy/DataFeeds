@@ -16,6 +16,7 @@ interface MappingFieldProps {
   onCommentClick: () => void; // Updated to handle field-specific comments
   onABTestClick: () => void;
   onEditClick: () => void;
+  optional?: boolean;
 }
 
 const MappingField: React.FC<MappingFieldProps> = ({
@@ -28,6 +29,7 @@ const MappingField: React.FC<MappingFieldProps> = ({
   onCommentClick,
   onABTestClick,
   onEditClick,
+  optional,
 }) => {
   const {
     state,
@@ -135,7 +137,7 @@ const MappingField: React.FC<MappingFieldProps> = ({
     <div className="border-b border-gray-200">
       <div className="p-6">
         {/* Header Actions */}
-        <div className="flex items-center justify-between mb-6 border-b pb-4">
+        <div className="flex items-center justify-between mb-6 border-b pb-4" >
           <div className="flex items-center gap-4">
             {/* Comments Button */}
             <button

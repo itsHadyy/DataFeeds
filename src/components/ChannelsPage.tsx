@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import useShops from '../hooks/useShops';
+import { ArrowLeft } from 'lucide-react';
 
 const ChannelsPage: React.FC = () => {
     const navigate = useNavigate();
@@ -35,10 +36,31 @@ const ChannelsPage: React.FC = () => {
         }
     };
 
+    const handleRemap = (channelId: string) => {
+        navigate(`/channel-mapping/${channelId}?shopId=${shopId}`);
+    };
+
+    const handleDownload = (channelId: string) => {
+        toast.info(`Download XML for ${channelId}`);
+    };
+
+    const handleBackClick = () => {
+        navigate('/');
+    };
+
     return (
         <div className="p-4">
             <ToastContainer />
-            <h1 className="text-2xl font-bold mb-4">Channels for Shop: {shop.name}</h1>
+            <button
+                onClick={handleBackClick}
+                className="flex items-center gap-2 px-3 py-1 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm mb-4"
+            >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+            </button>
+            <div className="flex justify-between items-center mb-4">
+                <h1 className="text-2xl font-bold">Channels for Shop: {shop.name}</h1>
+            </div>
             <h2 className="text-lg text-gray-600 mb-6">Shop ID: {shopId}</h2>
 
             <div className="mb-8">
@@ -73,9 +95,23 @@ const ChannelsPage: React.FC = () => {
                                 channel && (
                                     <li
                                         key={channelId}
-                                        className="p-4 border border-gray-200 rounded-md bg-white shadow-sm"
+                                        className="p-4 border border-gray-200 rounded-md bg-white shadow-sm flex justify-between items-center"
                                     >
-                                        {channel.name}
+                                        <span>{channel.name}</span>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleRemap(channelId)}
+                                                className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                                            >
+                                                Remap
+                                            </button>
+                                            <button
+                                                onClick={() => handleDownload(channelId)}
+                                                className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+                                            >
+                                                Download
+                                            </button>
+                                        </div>
                                     </li>
                                 )
                             );
