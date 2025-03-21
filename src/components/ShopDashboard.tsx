@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import ShopManager from "./ShopManager";
 import useShops from "../hooks/useShops";
 import XMLUploader from "./XMLUploader";
-import { XMLManager } from "../services/XMLManager"; // Import XMLManager
+import { XMLManager } from "../services/XMLManager";
 
 interface ShopDashboardProps {
     onSelectShop: (shopId: string) => void;
@@ -28,13 +28,12 @@ const ShopDashboard: React.FC<ShopDashboardProps> = ({ onSelectShop }) => {
         }
     };
 
-    // Helper function to generate a downloadable XML link using XMLManager
     const getXMLDownloadLink = (xmlContent: string): string => {
         const xmlManager = new XMLManager();
-        const parsedData = xmlManager.parseXMLString(xmlContent); // Parse the XML content
-        xmlManager.setData(parsedData); // Initialize XMLManager with the parsed data
-        const modifiedXML = xmlManager.generateXML(); // Generate modified XML
-        return xmlManager.generateDownloadLink(modifiedXML); // Generate download link
+        const parsedData = xmlManager.parseXMLString(xmlContent);
+        xmlManager.setData(parsedData);
+        const modifiedXML = xmlManager.generateXML();
+        return xmlManager.generateDownloadLink(modifiedXML);
     };
 
     const handleSelectShop = (shopId: string) => {
@@ -90,8 +89,8 @@ const ShopDashboard: React.FC<ShopDashboardProps> = ({ onSelectShop }) => {
                                 {shop.xmlContent ? (
                                     <a
                                         href={getXMLDownloadLink(shop.xmlContent)}
-                                        download="transformed.xml" // Set the filename to "transformed.xml"
-                                        onClick={(e) => e.stopPropagation()} // Prevent row click
+                                        download="transformed.xml" 
+                                        onClick={(e) => e.stopPropagation()} 
                                     >
                                         Download XML
                                     </a>

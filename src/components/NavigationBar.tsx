@@ -10,6 +10,7 @@ interface NavigationBarProps {
     setShowSettings: (show: boolean) => void;
     handleBackClick: () => void;
     showSettings: boolean;
+    onInternalFieldsClick: () => void;
 }
 
 const NavigationBar: React.FC<NavigationBarProps> = ({
@@ -19,6 +20,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     setShowSettings,
     handleBackClick,
     showSettings,
+    onInternalFieldsClick,
 }) => {
     const navigate = useNavigate();
 
@@ -35,13 +37,16 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                 <ArrowLeft className="h-4 w-4" />
                 Back to Shops
             </button>
-            <button
-                onClick={() => navigate('/')}
-                className="w-full flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors mb-4"
-            >
-                <List className="h-4 w-4" />
-                Internal Fields
-            </button>
+
+            {selectedShopId && (
+                <button
+                    onClick={onInternalFieldsClick} // Call the callback function
+                    className="w-full flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors mb-4"
+                >
+                    <List className="h-4 w-4" />
+                    Internal Fields
+                </button>
+            )}
             <button
                 onClick={() => {
                     if (selectedShopId) {

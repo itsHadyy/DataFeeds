@@ -432,21 +432,31 @@ function MainApp() {
     );
   };
 
+  const handleInternalFieldsClick = () => {
+    // Scroll to the mapping fields section
+    const mappingFieldsSection = document.getElementById('mapping-fields-section');
+    if (mappingFieldsSection) {
+      mappingFieldsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const xmlData = xmlManager.getData();
   const selectedShop = shops.find((shop) => shop.id === selectedShopId);
   const commentsList = selectedShop?.comments || [];
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      {/* Navigation Bar (Always visible) */}
-      <NavigationBar
-        selectedShopId={selectedShopId}
-        shops={shops}
-        setShowCommentsDialog={setShowCommentsDialog}
-        setShowSettings={setShowSettings}
-        handleBackClick={handleBackClick}
-        showSettings={showSettings}
-      />
+      {selectedShopId && (
+        <NavigationBar
+          selectedShopId={selectedShopId}
+          shops={shops}
+          setShowCommentsDialog={setShowCommentsDialog}
+          setShowSettings={setShowSettings}
+          handleBackClick={handleBackClick}
+          showSettings={showSettings}
+          onInternalFieldsClick={handleInternalFieldsClick}
+        />
+      )}
 
       {/* Main Content */}
       <div className="flex-1 p-8 overflow-y-auto">
