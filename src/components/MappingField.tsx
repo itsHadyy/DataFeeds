@@ -50,6 +50,10 @@ const MappingField: React.FC<MappingFieldProps> = ({
   } = actions;
 
   const [staticValue, setStaticValue] = useState('');
+  const [condition, setCondition] = useState<'all' | 'onlyIf'>('all');
+  const [onlyIfField, setOnlyIfField] = useState<string | null>(null);
+  const [onlyIfOperator, setOnlyIfOperator] = useState<string | null>(null);
+  const [onlyIfValue, setOnlyIfValue] = useState<string>('');
 
   const mappingTypes = [
     { value: 'rename', label: 'Rename' },
@@ -58,13 +62,25 @@ const MappingField: React.FC<MappingFieldProps> = ({
     { value: 'empty', label: 'Leave empty' },
   ];
 
+  const operators = [
+    'is equal to',
+    'is not equal to',
+    'includes',
+    'doesn\'t include',
+    // ... other operators
+  ];
+
   const handleStaticValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setStaticValue(value);
     onFieldChange({
       targetField: fieldName,
       type: 'static',
-      value: value
+      value: value,
+      condition: condition, // Include condition
+      onlyIfField: onlyIfField,
+      onlyIfOperator: onlyIfOperator,
+      onlyIfValue: onlyIfValue,
     });
   };
 
@@ -76,7 +92,11 @@ const MappingField: React.FC<MappingFieldProps> = ({
         onFieldChange({
           targetField: fieldName,
           type: 'rename',
-          sourceField: field.value
+          sourceField: field.value,
+          condition: condition, // Include condition
+          onlyIfField: onlyIfField,
+          onlyIfOperator: onlyIfOperator,
+          onlyIfValue: onlyIfValue,
         });
       } else if (mappingType === 'combine') {
         const fieldWithType: FieldOption = {
@@ -88,7 +108,11 @@ const MappingField: React.FC<MappingFieldProps> = ({
           targetField: fieldName,
           type: 'combine',
           fields: [...selectedFields, fieldWithType],
-          separator: separator
+          separator: separator,
+          condition: condition, // Include condition
+          onlyIfField: onlyIfField,
+          onlyIfOperator: onlyIfOperator,
+          onlyIfValue: onlyIfValue,
         });
       }
     });
@@ -101,7 +125,11 @@ const MappingField: React.FC<MappingFieldProps> = ({
         targetField: fieldName,
         type: 'combine',
         fields: selectedFields,
-        separator: newSeparator
+        separator: newSeparator,
+        condition: condition, // Include condition
+        onlyIfField: onlyIfField,
+        onlyIfOperator: onlyIfOperator,
+        onlyIfValue: onlyIfValue,
       });
     }
   };
@@ -111,14 +139,22 @@ const MappingField: React.FC<MappingFieldProps> = ({
     if (type === 'empty') {
       onFieldChange({
         targetField: fieldName,
-        type: 'empty'
+        type: 'empty',
+        condition: condition, // Include condition
+        onlyIfField: onlyIfField,
+        onlyIfOperator: onlyIfOperator,
+        onlyIfValue: onlyIfValue,
       });
     } else if (type === 'static') {
       setStaticValue('');
       onFieldChange({
         targetField: fieldName,
         type: 'static',
-        value: ''
+        value: '',
+        condition: condition, // Include condition
+        onlyIfField: onlyIfField,
+        onlyIfOperator: onlyIfOperator,
+        onlyIfValue: onlyIfValue,
       });
     }
   };
@@ -131,6 +167,22 @@ const MappingField: React.FC<MappingFieldProps> = ({
 
   const handleCloseDropdown = () => {
     setDropdownState(prev => ({ ...prev, isFieldDropdownOpen: false }));
+  };
+
+  const handleConditionChange = (newCondition: 'all' | 'onlyIf') => {
+    setCondition(newCondition);
+  };
+
+  const handleOnlyIfFieldChange = (field: string) => {
+    setOnlyIfField(field);
+  };
+
+  const handleOnlyIfOperatorChange = (operator: string) => {
+    setOnlyIfOperator(operator);
+  };
+
+  const handleOnlyIfValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOnlyIfValue(e.target.value);
   };
 
   return (
@@ -271,21 +323,60 @@ const MappingField: React.FC<MappingFieldProps> = ({
           <div className="col-span-2">
             <div className="flex rounded-md overflow-hidden border">
               <button
+                onClick={() => handleConditionChange('all')}
                 disabled={isLocked}
-                className={`flex-1 px-3 py-2 text-sm bg-white border-r ${isLocked ? 'opacity-75 cursor-not-allowed' : 'hover:bg-gray-50'
-                  }`}
+                className={`flex-1 px-3 py-2 text-sm bg-white border-r ${isLocked ? 'opacity-75 cursor-not-allowed' : 'hover:bg-gray-50'} ${condition === 'all' ? 'bg-blue-100' : ''}`}
               >
                 All Products
               </button>
               <button
+                onClick={() => handleConditionChange('onlyIf')}
                 disabled={isLocked}
-                className={`flex-1 px-3 py-2 text-sm bg-white ${isLocked ? 'opacity-75 cursor-not-allowed' : 'hover:bg-gray-50'
-                  }`}
+                className={`flex-1 px-3 py-2 text-sm bg-white ${isLocked ? 'opacity-75 cursor-not-allowed' : 'hover:bg-gray-50'} ${condition === 'onlyIf' ? 'bg-blue-100' : ''}`}
               >
                 Only IF
               </button>
             </div>
           </div>
+
+          {/* Only IF Condition UI */}
+          {condition === 'onlyIf' && (
+            <div className="col-span-12 mt-4">
+              <div className="flex items-center gap-2">
+                <select
+                  value={onlyIfField || ''}
+                  onChange={(e) => handleOnlyIfFieldChange(e.target.value)}
+                  className="p-2 border rounded-md"
+                >
+                  <option value="">Select Input Field</option>
+                  {fieldOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={onlyIfOperator || ''}
+                  onChange={(e) => handleOnlyIfOperatorChange(e.target.value)}
+                  className="p-2 border rounded-md"
+                >
+                  <option value="">Select Operator</option>
+                  {operators.map((operator) => (
+                    <option key={operator} value={operator}>
+                      {operator}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  value={onlyIfValue}
+                  onChange={handleOnlyIfValueChange}
+                  placeholder="Enter Text"
+                  className="p-2 border rounded-md"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="col-span-2 flex justify-end gap-2">

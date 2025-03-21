@@ -433,7 +433,6 @@ function MainApp() {
   };
 
   const handleInternalFieldsClick = () => {
-    // Scroll to the mapping fields section
     const mappingFieldsSection = document.getElementById('mapping-fields-section');
     if (mappingFieldsSection) {
       mappingFieldsSection.scrollIntoView({ behavior: 'smooth' });
