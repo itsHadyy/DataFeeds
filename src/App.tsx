@@ -303,31 +303,16 @@ function MainApp() {
   }, [xmlManager, tempMappings]);
 
   const handleDeleteShop = () => {
+    console.log("Selected shop ID to delete:", selectedShopId); // Add this
     if (selectedShopId) {
       const confirmDelete = window.confirm(
         'Are you sure you want to delete this shop? This action cannot be undone.'
       );
 
       if (confirmDelete) {
-        console.log('Selected shop ID to delete:', selectedShopId);
+        console.log("Shop IDs before deletion:", shops.map(s => s.id)); // Add this
         deleteShop(selectedShopId);
-        setSelectedShopId(null);
-        setShowSettings(false);
-
-        toast.success('Shop deleted successfully!', {
-          position: 'top-right',
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-        });
-      } else {
-        console.log('Shop deletion cancelled by user.');
       }
-    } else {
-      console.log('No shop selected for deletion.');
     }
   };
 
@@ -549,7 +534,7 @@ function MainApp() {
                   </div>
                 </div>
 
-                {modifiedXMLString && (
+                {/* {modifiedXMLString && (
                   <button
                     onClick={() => xmlManager.downloadXML(modifiedXMLString)}
                     className="px-4 py-2 mb-6 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -557,7 +542,7 @@ function MainApp() {
                     <Save className="h-4 w-4 inline-block mr-2" />
                     Download Again
                   </button>
-                )}
+                )} */}
 
                 {/* Re-upload XML */}
                 <div className="mb-6">

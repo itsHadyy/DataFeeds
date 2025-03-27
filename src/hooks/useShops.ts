@@ -56,13 +56,16 @@ const useShops = () => {
 
     const deleteShop = useCallback((shopId: string) => {
         console.log("Deleting shop with ID:", shopId);
-        setShops((prevShops) =>
-            prevShops.filter((shop) => {
-                console.log("Comparing shop ID:", shop.id);
+        console.log("Current shops before deletion:", shops); // Add this line
+        setShops((prevShops) => {
+            const newShops = prevShops.filter((shop) => {
+                console.log("Comparing:", shop.id, "with", shopId);
                 return shop.id !== shopId;
-            })
-        );
-    }, []);
+            });
+            console.log("Shops after deletion:", newShops); // Add this line
+            return newShops;
+        });
+    }, [shops]); // Add shops to dependencies
 
     const updateShop = useCallback((shopId: string, newName: string) => {
         setShops((prevShops) =>
