@@ -387,20 +387,42 @@ function MainApp() {
   };
 
   const handlePreviewClick = (field: XMLField) => {
-    console.log('Preview button clicked for field:', field.name);
     setPreviewField(field);
-
     const xmlData = xmlManager.getData();
-    if (xmlData && xmlData.items) {
-      console.log('xmlData.items:', xmlData.items); // Debugging
 
-      const previewRows = xmlData.items.map((item) => ({
-        productId: item.id || 'N/A', // Adjusted based on example
-        title: item.productName || 'N/A', // Adjusted based on example
-        fieldsUsedInMapping: field.name,
-        channelField: item[field.name] || 'N/A',
-      }));
-      setPreviewData(previewRows);
+    if (xmlData?.items) {
+      try {
+        const mappedData = xmlManager.applyMappings(tempMappings);
+
+        const previewRows = xmlData.items.map((item, index) => {
+          // 1. First try to find the actual ID field in your data
+          const idField = Object.keys(item).find(key =>
+            key.toLowerCase().includes('id') ||
+            key.toLowerCase().includes('sku') ||
+            key.toLowerCase().includes('code')
+          );
+
+          // 2. Then try to find the actual title field
+          const titleField = Object.keys(item).find(key =>
+            key.toLowerCase().includes('title') ||
+            key.toLowerCase().includes('name') ||
+            key.toLowerCase().includes('product')
+          );
+
+          return {
+            productId: idField ? item[idField] : `ITEM_${index + 1}`,
+            productTitle: titleField ? item[titleField] : 'Product',
+            fieldName: field.name,
+            mappedValue: mappedData.items[index]?.[field.name] || 'N/A'
+          };
+        });
+
+        setPreviewData(previewRows);
+      } catch (error) {
+        console.error('Preview error:', error);
+        toast.error('Failed to generate preview');
+        setPreviewData([]);
+      }
     } else {
       setPreviewData([]);
     }
@@ -593,29 +615,8 @@ function MainApp() {
                     />
                   </div>
                 )}
-
-                {/* Field Mapping Section */}
-                {tempMappingFields.length > 0 && (
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    {tempMappingFields.map((field) => (
-                      <MappingField
-                        key={field.name}
-                        fieldName={field.name}
-                        fieldValue={field.value}
-                        fieldOptions={getFieldOptions(xmlData)}
-                        helpText={field.helpText}
-                        onFieldChange={(mapping) => handleFieldChange(field.name, mapping)}
-                        onPreviewClick={() => handlePreviewClick(field)}
-                        onCommentClick={() => handleCommentClick(field.name)}
-                        onABTestClick={() => console.log('A/B Test clicked')}
-                        onEditClick={() => console.log('Edit clicked')}
-                      />
-                    ))}
-                  </div>
-                )}
-
                 {/* Save and Discard Changes Buttons */}
-                <div className="flex justify-end gap-4 mt-6">
+                <div className="flex justify-end gap-4 mt-6 mb-6">
                   <button
                     onClick={handleDiscardChanges}
                     className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
@@ -638,36 +639,65 @@ function MainApp() {
                     </button>
                   )}
                 </div>
+
+                {/* Field Mapping Section */}
+                {tempMappingFields.length > 0 && (
+                  <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                    {tempMappingFields.map((field) => (
+                      <MappingField
+                        key={field.name}
+                        fieldName={field.name}
+                        fieldValue={field.value}
+                        fieldOptions={getFieldOptions(xmlData)}
+                        helpText={field.helpText}
+                        onFieldChange={(mapping) => handleFieldChange(field.name, mapping)}
+                        onPreviewClick={() => handlePreviewClick(field)}
+                        onCommentClick={() => handleCommentClick(field.name)}
+                        onABTestClick={() => console.log('A/B Test clicked')}
+                        onEditClick={() => console.log('Edit clicked')}
+                      />
+                    ))}
+                  </div>
+                )}
               </>
             )}
 
-            {/* Preview Dialog */}
             {showPreviewDialog && previewData.length > 0 && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                <div className="bg-white p-6 rounded-lg w-full max-w-4xl">
-                  <h2 className="text-lg font-semibold mb-4">Preview</h2>
+                <div className="bg-white p-6 rounded-lg w-full max-w-6xl">
+                  <h2 className="text-lg font-semibold mb-4">Preview - {previewField?.name}</h2>
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600">
+                      Showing mapped values for selected field
+                    </p>
+                  </div>
                   <table className="w-full border-collapse border border-gray-300">
                     <thead>
                       <tr className="bg-gray-100">
                         <th className="border border-gray-300 p-2">Product ID</th>
-                        <th className="border border-gray-300 p-2">Title</th>
-                        <th className="border border-gray-300 p-2">Fields used in mapping</th>
-                        <th className="border border-gray-300 p-2">Channel Field (Output)</th>
+                        <th className="border border-gray-300 p-2">Product Title</th>
+                        <th className="border border-gray-300 p-2">Field</th>
+                        <th className="border border-gray-300 p-2">Mapped Value</th>
                       </tr>
                     </thead>
                     <tbody>
                       {currentItems.map((row, index) => (
                         <tr key={index} className="hover:bg-gray-50">
-                          <td className="border border-gray-300 p-2">{String(row.productId)}</td>
-                          <td className="border border-gray-300 p-2">{String(row.title)}</td>
-                          <td className="border border-gray-300 p-2">{String(row.fieldsUsedInMapping)}</td>
-                          <td className="border border-gray-300 p-2">{String(row.channelField)}</td>
+                          <td className="border border-gray-300 p-2 font-mono">{row.productId}</td>
+                          <td className="border border-gray-300 p-2">{row.productTitle}</td>
+                          <td className="border border-gray-300 p-2 text-gray-600">{row.fieldName}</td>
+                          <td className="border border-gray-300 p-2">
+                            {row.mappedValue === 'N/A' ? (
+                              <span className="text-gray-400">N/A</span>
+                            ) : (
+                              row.mappedValue
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
 
-                  {/* Pagination */}
                   <div className="mt-4 flex justify-between items-center">
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}

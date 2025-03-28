@@ -67,52 +67,56 @@ const MappingField: React.FC<MappingFieldProps> = ({
     'is not equal to',
     'includes',
     'doesn\'t include',
-    // ... other operators
   ];
 
   const handleStaticValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setStaticValue(value);
-    onFieldChange({
+
+    const baseMapping = {
       targetField: fieldName,
       type: 'static',
       value: value,
-      condition: condition, // Include condition
-      onlyIfField: onlyIfField,
-      onlyIfOperator: onlyIfOperator,
-      onlyIfValue: onlyIfValue,
-    });
-  };
+      condition: condition,
+      ...(condition === 'onlyIf' && onlyIfField && onlyIfOperator && onlyIfValue
+        ? {
+          onlyIfField,
+          onlyIfOperator,
+          onlyIfValue
+        }
+        : {})
+    };
 
+    onFieldChange(baseMapping);
+  };
   const handleFieldSelection = (field: FieldOption) => {
     if (!field) return;
 
     handleFieldSelect(field, () => {
+      const baseMapping = {
+        targetField: fieldName,
+        condition: condition,
+        ...(condition === 'onlyIf' && onlyIfField && onlyIfOperator && onlyIfValue
+          ? {
+            onlyIfField,
+            onlyIfOperator,
+            onlyIfValue
+          }
+          : {})
+      };
+
       if (mappingType === 'rename') {
         onFieldChange({
-          targetField: fieldName,
+          ...baseMapping,
           type: 'rename',
-          sourceField: field.value,
-          condition: condition, // Include condition
-          onlyIfField: onlyIfField,
-          onlyIfOperator: onlyIfOperator,
-          onlyIfValue: onlyIfValue,
+          sourceField: field.value
         });
       } else if (mappingType === 'combine') {
-        const fieldWithType: FieldOption = {
-          ...field,
-          type: field.type || 'custom'
-        };
-
         onFieldChange({
-          targetField: fieldName,
+          ...baseMapping,
           type: 'combine',
-          fields: [...selectedFields, fieldWithType],
-          separator: separator,
-          condition: condition, // Include condition
-          onlyIfField: onlyIfField,
-          onlyIfOperator: onlyIfOperator,
-          onlyIfValue: onlyIfValue,
+          fields: [...selectedFields, field],
+          separator: separator
         });
       }
     });
@@ -121,40 +125,47 @@ const MappingField: React.FC<MappingFieldProps> = ({
   const handleSeparatorChange = (newSeparator: string) => {
     setSeparator(newSeparator);
     if (mappingType === 'combine' && selectedFields.length > 0) {
-      onFieldChange({
+      const baseMapping = {
         targetField: fieldName,
         type: 'combine',
         fields: selectedFields,
         separator: newSeparator,
-        condition: condition, // Include condition
-        onlyIfField: onlyIfField,
-        onlyIfOperator: onlyIfOperator,
-        onlyIfValue: onlyIfValue,
-      });
+        condition: condition,
+        ...(condition === 'onlyIf' && onlyIfField && onlyIfOperator && onlyIfValue
+          ? {
+            onlyIfField,
+            onlyIfOperator,
+            onlyIfValue
+          }
+          : {})
+      };
+      onFieldChange(baseMapping);
     }
   };
 
   const handleMappingTypeSelect = (type: string) => {
     handleMappingTypeChange(type);
+
+    const baseMapping = {
+      targetField: fieldName,
+      type: type as 'empty' | 'static',
+      condition: condition,
+      ...(condition === 'onlyIf' && onlyIfField && onlyIfOperator && onlyIfValue
+        ? {
+          onlyIfField,
+          onlyIfOperator,
+          onlyIfValue
+        }
+        : {})
+    };
+
     if (type === 'empty') {
-      onFieldChange({
-        targetField: fieldName,
-        type: 'empty',
-        condition: condition, // Include condition
-        onlyIfField: onlyIfField,
-        onlyIfOperator: onlyIfOperator,
-        onlyIfValue: onlyIfValue,
-      });
+      onFieldChange(baseMapping);
     } else if (type === 'static') {
       setStaticValue('');
       onFieldChange({
-        targetField: fieldName,
-        type: 'static',
-        value: '',
-        condition: condition, // Include condition
-        onlyIfField: onlyIfField,
-        onlyIfOperator: onlyIfOperator,
-        onlyIfValue: onlyIfValue,
+        ...baseMapping,
+        value: ''
       });
     }
   };
@@ -193,7 +204,7 @@ const MappingField: React.FC<MappingFieldProps> = ({
           <div className="flex items-center gap-4">
             {/* Comments Button */}
             <button
-              onClick={onCommentClick} // This will trigger the field-specific comment dialog
+              onClick={onCommentClick}
               disabled={isLocked}
               className={`btn-sm flex items-center gap-2 ${isLocked ? 'text-gray-400 cursor-not-allowed' : 'text-gray-600 hover:text-gray-800'
                 }`}
@@ -319,18 +330,44 @@ const MappingField: React.FC<MappingFieldProps> = ({
             </div>
           </div>
 
-          {/* Condition Toggle */}
           <div className="col-span-2">
             <div className="flex rounded-md overflow-hidden border">
               <button
-                onClick={() => handleConditionChange('all')}
+                onClick={() => {
+                  handleConditionChange('all');
+                  // Update mapping when switching to 'all'
+                  if (mappingType === 'rename' && selectedField) {
+                    onFieldChange({
+                      targetField: fieldName,
+                      type: 'rename',
+                      sourceField: selectedField,
+                      condition: 'all'
+                    });
+                  }
+                  // Add similar updates for other mapping types
+                }}
                 disabled={isLocked}
                 className={`flex-1 px-3 py-2 text-sm bg-white border-r ${isLocked ? 'opacity-75 cursor-not-allowed' : 'hover:bg-gray-50'} ${condition === 'all' ? 'bg-blue-100' : ''}`}
               >
                 All Products
               </button>
               <button
-                onClick={() => handleConditionChange('onlyIf')}
+                onClick={() => {
+                  handleConditionChange('onlyIf');
+                  // Update mapping when switching to 'onlyIf'
+                  if (mappingType === 'rename' && selectedField) {
+                    onFieldChange({
+                      targetField: fieldName,
+                      type: 'rename',
+                      sourceField: selectedField,
+                      condition: 'onlyIf',
+                      onlyIfField: onlyIfField || '',
+                      onlyIfOperator: onlyIfOperator || '',
+                      onlyIfValue: onlyIfValue
+                    });
+                  }
+                  // Add similar updates for other mapping types
+                }}
                 disabled={isLocked}
                 className={`flex-1 px-3 py-2 text-sm bg-white ${isLocked ? 'opacity-75 cursor-not-allowed' : 'hover:bg-gray-50'} ${condition === 'onlyIf' ? 'bg-blue-100' : ''}`}
               >
@@ -338,14 +375,47 @@ const MappingField: React.FC<MappingFieldProps> = ({
               </button>
             </div>
           </div>
-
-          {/* Only IF Condition UI */}
           {condition === 'onlyIf' && (
             <div className="col-span-12 mt-4">
               <div className="flex items-center gap-2">
                 <select
                   value={onlyIfField || ''}
-                  onChange={(e) => handleOnlyIfFieldChange(e.target.value)}
+                  onChange={(e) => {
+                    handleOnlyIfFieldChange(e.target.value);
+                    // Trigger mapping update when condition changes
+                    if (mappingType === 'rename' && selectedField) {
+                      onFieldChange({
+                        targetField: fieldName,
+                        type: 'rename',
+                        sourceField: selectedField,
+                        condition: 'onlyIf',
+                        onlyIfField: e.target.value,
+                        onlyIfOperator,
+                        onlyIfValue
+                      });
+                    } else if (mappingType === 'static' && staticValue) {
+                      onFieldChange({
+                        targetField: fieldName,
+                        type: 'static',
+                        value: staticValue,
+                        condition: 'onlyIf',
+                        onlyIfField: e.target.value,
+                        onlyIfOperator,
+                        onlyIfValue
+                      });
+                    } else if (mappingType === 'combine' && selectedFields.length > 0) {
+                      onFieldChange({
+                        targetField: fieldName,
+                        type: 'combine',
+                        fields: selectedFields,
+                        separator: separator,
+                        condition: 'onlyIf',
+                        onlyIfField: e.target.value,
+                        onlyIfOperator,
+                        onlyIfValue
+                      });
+                    }
+                  }}
                   className="p-2 border rounded-md"
                 >
                   <option value="">Select Input Field</option>
@@ -357,7 +427,22 @@ const MappingField: React.FC<MappingFieldProps> = ({
                 </select>
                 <select
                   value={onlyIfOperator || ''}
-                  onChange={(e) => handleOnlyIfOperatorChange(e.target.value)}
+                  onChange={(e) => {
+                    handleOnlyIfOperatorChange(e.target.value);
+                    // Similar update logic as above
+                    if (mappingType === 'rename' && selectedField) {
+                      onFieldChange({
+                        targetField: fieldName,
+                        type: 'rename',
+                        sourceField: selectedField,
+                        condition: 'onlyIf',
+                        onlyIfField,
+                        onlyIfOperator: e.target.value,
+                        onlyIfValue
+                      });
+                    }
+                    // Add similar updates for other mapping types
+                  }}
                   className="p-2 border rounded-md"
                 >
                   <option value="">Select Operator</option>
@@ -370,7 +455,22 @@ const MappingField: React.FC<MappingFieldProps> = ({
                 <input
                   type="text"
                   value={onlyIfValue}
-                  onChange={handleOnlyIfValueChange}
+                  onChange={(e) => {
+                    setOnlyIfValue(e.target.value);
+                    // Similar update logic as above
+                    if (mappingType === 'rename' && selectedField) {
+                      onFieldChange({
+                        targetField: fieldName,
+                        type: 'rename',
+                        sourceField: selectedField,
+                        condition: 'onlyIf',
+                        onlyIfField,
+                        onlyIfOperator,
+                        onlyIfValue: e.target.value
+                      });
+                    }
+                    // Add similar updates for other mapping types
+                  }}
                   placeholder="Enter Text"
                   className="p-2 border rounded-md"
                 />

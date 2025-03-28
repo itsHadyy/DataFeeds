@@ -5,7 +5,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import useShops from '../hooks/useShops';
 import { ArrowLeft } from 'lucide-react';
-import NavigationBar from '../components/NavigationBar'; // Import NavigationBar
+import NavigationBar from '../components/NavigationBar';
 
 const ChannelsPage: React.FC = () => {
     const navigate = useNavigate();
@@ -74,7 +74,7 @@ const ChannelsPage: React.FC = () => {
                 showSettings={false}
                 onInternalFieldsClick={onInternalFieldsClick}
             />
-            <div className="p-4">
+            <div className="p-4 w-full">
                 <ToastContainer />
                 <button
                     onClick={handleBackClick}
@@ -90,58 +90,73 @@ const ChannelsPage: React.FC = () => {
 
                 <div className="mb-8">
                     <h3 className="text-xl font-semibold mb-4">Select a Channel</h3>
-                    <select
-                        value={selectedChannel || ''}
-                        onChange={(e) => setSelectedChannel(e.target.value)}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-                    >
-                        <option value="">Select Channel</option>
-                        {predefinedChannels.map((channel) => (
-                            <option key={channel.id} value={channel.id}>
-                                {channel.name}
-                            </option>
-                        ))}
-                    </select>
-                    <button
-                        onClick={handleChannelSelect}
-                        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                        Map Channel
-                    </button>
+                    <div className="flex gap-4">
+                        <select
+                            value={selectedChannel || ''}
+                            onChange={(e) => setSelectedChannel(e.target.value)}
+                            className="flex-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
+                        >
+                            <option value="">Select Channel</option>
+                            {predefinedChannels.map((channel) => (
+                                <option key={channel.id} value={channel.id}>
+                                    {channel.name}
+                                </option>
+                            ))}
+                        </select>
+                        <button
+                            onClick={handleChannelSelect}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                        >
+                            Map Channel
+                        </button>
+                    </div>
                 </div>
 
                 {shop.mappedChannels && shop.mappedChannels.length > 0 ? (
                     <div className="mt-8">
                         <h3 className="text-xl font-semibold mb-4">Previously Mapped Channels</h3>
-                        <ul className="space-y-2">
-                            {shop.mappedChannels.map((channelId) => {
-                                const channel = predefinedChannels.find((c) => c.id === channelId);
-                                return (
-                                    channel && (
-                                        <li
-                                            key={channelId}
-                                            className="p-4 border border-gray-200 rounded-md bg-white shadow-sm flex justify-between items-center"
-                                        >
-                                            <span>{channel.name}</span>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => handleRemap(channelId)}
-                                                    className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
-                                                >
-                                                    Remap
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDownload(channelId)}
-                                                    className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
-                                                >
-                                                    Download
-                                                </button>
-                                            </div>
-                                        </li>
-                                    )
-                                );
-                            })}
-                        </ul>
+                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                            <thead>
+                                <tr style={{ backgroundColor: "#f0f0f0" }}>
+                                    <th style={{ border: "1px solid #ddd", padding: "8px" }}>Channel</th>
+                                    <th style={{ border: "1px solid #ddd", padding: "8px" }}>Status</th>
+                                    <th style={{ border: "1px solid #ddd", padding: "8px" }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {shop.mappedChannels.map((channelId) => {
+                                    const channel = predefinedChannels.find((c) => c.id === channelId);
+                                    return (
+                                        channel && (
+                                            <tr key={channelId} className="hover:bg-gray-50 transition-colors">
+                                                <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                                                    {channel.name}
+                                                </td>
+                                                <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                                                    Mapped
+                                                </td>
+                                                <td style={{ border: "1px solid #ddd", padding: "8px" }}>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleRemap(channelId)}
+                                                            className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
+                                                        >
+                                                            Remap
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDownload(channelId)}
+                                                            className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
+                                                        >
+                                                            Download
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )
+                                    );
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 ) : (
                     <div className="mt-8">
