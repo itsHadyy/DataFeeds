@@ -122,7 +122,15 @@ const ChannelMappingPage: React.FC = () => {
   // Preview dialog state
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [previewField, setPreviewField] = useState<XMLField | null>(null);
-  const [previewData, setPreviewData] = useState<PreviewRow[]>([]);
+  const [previewData, setPreviewData] = useState<
+    {
+      productId: string;
+      productTitle: string;
+      fieldName: string;
+      originalValue: string;
+      mappedValue: string;
+    }[]
+  >([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const totalPages = Math.ceil(previewData.length / itemsPerPage);
@@ -323,6 +331,7 @@ const ChannelMappingPage: React.FC = () => {
             productId: idField ? item[idField] : `ITEM_${index + 1}`,
             productTitle: titleField ? item[titleField] : 'Product',
             fieldName: field.name,
+            originalValue: item[field.name] || 'N/A', // Add original value
             mappedValue: mappedData.items[index]?.[field.name] || 'N/A'
           };
         });
@@ -339,6 +348,7 @@ const ChannelMappingPage: React.FC = () => {
 
     setShowPreviewDialog(true);
   };
+
 
   const xmlData = xmlManager.getData();
 
@@ -515,6 +525,7 @@ const ChannelMappingPage: React.FC = () => {
                     <th className="border border-gray-300 p-2">Product ID</th>
                     <th className="border border-gray-300 p-2">Product Title</th>
                     <th className="border border-gray-300 p-2">Field</th>
+                    <th className="border border-gray-300 p-2">Original Value</th>
                     <th className="border border-gray-300 p-2">Mapped Value</th>
                   </tr>
                 </thead>
@@ -524,6 +535,13 @@ const ChannelMappingPage: React.FC = () => {
                       <td className="border border-gray-300 p-2 font-mono">{row.productId}</td>
                       <td className="border border-gray-300 p-2">{row.productTitle}</td>
                       <td className="border border-gray-300 p-2 text-gray-600">{row.fieldName}</td>
+                      <td className="border border-gray-300 p-2">
+                        {row.originalValue === 'N/A' ? (
+                          <span className="text-gray-400">N/A</span>
+                        ) : (
+                          row.originalValue
+                        )}
+                      </td>
                       <td className="border border-gray-300 p-2">
                         {row.mappedValue === 'N/A' ? (
                           <span className="text-gray-400">N/A</span>

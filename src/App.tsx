@@ -1,4 +1,3 @@
-// App.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { Save, Undo, Settings, ArrowLeft, ChevronLeft, ChevronRight, MessageCircle, List } from 'lucide-react';
 import { ToastContainer, toast } from 'react-toastify';
@@ -9,7 +8,7 @@ import XMLUploader from './components/XMLUploader';
 import ShopDashboard from './components/ShopDashboard';
 import ChannelsPage from './components/ChannelsPage';
 import ChannelMappingPage from './components/ChannelMappingPage';
-import NavigationBar from './components/NavigationBar'; // Import the NavigationBar component
+import NavigationBar from './components/NavigationBar'; 
 import { FieldOption } from './types/mapping';
 import { XMLData, XMLField, XMLMapping } from './types/xml';
 import { XMLManager } from './services/XMLManager';
@@ -35,11 +34,9 @@ function MainApp() {
   const { shops, addShop, deleteShop, updateShop, uploadXMLToShop, addComment, deleteComment } = useShops();
   const navigate = useNavigate();
 
-  // State for comments dialog
   const [showCommentsDialog, setShowCommentsDialog] = useState(false);
   const [newComment, setNewComment] = useState('');
 
-  // State for comments, preview, and unsaved changes
   const [comments, setComments] = useState<{ [fieldName: string]: string }>({});
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [previewField, setPreviewField] = useState<XMLField | null>(null);
@@ -50,46 +47,38 @@ function MainApp() {
     mappingFields: XMLField[];
   }>({ mappings: [], comments: {}, mappingFields: [] });
 
-  // Temporary state for unsaved changes
   const [tempMappings, setTempMappings] = useState<XMLMapping[]>([]);
   const [tempComments, setTempComments] = useState<{ [fieldName: string]: string }>({});
   const [tempMappingFields, setTempMappingFields] = useState<XMLField[]>([]);
 
-  // State for settings view
   const [showSettings, setShowSettings] = useState(false);
 
-  // State for feedback messages
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
 
-  // State for preview data (table rows)
   const [previewData, setPreviewData] = useState<
     {
       productId: string;
-      title: string;
-      fieldsUsedInMapping: string;
-      channelField: string;
+      productTitle: string;
+      fieldName: string;
+      originalValue: string;
+      mappedValue: string;
     }[]
   >([]);
 
-  // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Calculate total pages
   const totalPages = Math.ceil(previewData.length / itemsPerPage);
 
-  // Get current items for the current page
   const currentItems = previewData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  // Load comments from localStorage on component mount
   useEffect(() => {
     const savedComments: { [fieldName: string]: string } = {};
     mappingFields.forEach((field) => {
@@ -102,7 +91,6 @@ function MainApp() {
     setTempComments(savedComments);
   }, [mappingFields]);
 
-  // Get available field options for mapping
   const getFieldOptions = useCallback((xmlData: XMLData | null): FieldOption[] => {
     if (!xmlData) return [];
     const uniqueKeys = new Set<string>();
@@ -116,7 +104,6 @@ function MainApp() {
     }));
   }, []);
 
-  // Handle field mapping changes
   const handleFieldChange = useCallback((fieldName: string, mapping: XMLMapping) => {
     setTempMappings((prev) => {
       const existingIndex = prev.findIndex((m) => m.targetField === fieldName);
@@ -140,12 +127,11 @@ function MainApp() {
   const handleSaveAndProceed = useCallback(() => {
     console.log('Changes saved and proceeding to channels');
     setHasUnsavedChanges(false);
-    setMappings(tempMappings); // Update mappings state
+    setMappings(tempMappings); 
     setComments(tempComments);
     setMappingFields(tempMappingFields);
     setLastSavedState({ mappings: tempMappings, comments: tempComments, mappingFields: tempMappingFields });
 
-    // Show a success toast notification
     toast.success('Changes saved successfully!', {
       position: 'top-right',
       autoClose: 3000,
@@ -159,7 +145,6 @@ function MainApp() {
     setFeedbackMessage('Changes saved successfully!');
     setTimeout(() => setFeedbackMessage(null), 3000);
 
-    // Navigate to the channels page
     if (selectedShopId) {
       navigate(`/channels?shopId=${selectedShopId}`);
     } else {
@@ -167,7 +152,6 @@ function MainApp() {
     }
   }, [tempMappings, tempComments, tempMappingFields, navigate]);
 
-  // Handle discard changes button click
   const handleDiscardChanges = useCallback(() => {
     console.log('Changes discarded');
     setHasUnsavedChanges(false);
@@ -175,7 +159,6 @@ function MainApp() {
     setTempComments(lastSavedState.comments);
     setTempMappingFields(lastSavedState.mappingFields);
 
-    // Show an info toast notification
     toast.info('Changes discarded successfully!', {
       position: 'top-right',
       autoClose: 3000,
@@ -190,7 +173,6 @@ function MainApp() {
     setTimeout(() => setFeedbackMessage(null), 3000);
   }, [lastSavedState]);
 
-  // Handle navigation away without saving
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
@@ -204,7 +186,6 @@ function MainApp() {
     };
   }, [hasUnsavedChanges]);
 
-  // Handle back button click
   const handleBackClick = () => {
     if (hasUnsavedChanges) {
       const confirmNavigation = window.confirm(
@@ -216,9 +197,8 @@ function MainApp() {
     setShowSettings(false);
   };
 
-  // Extract fields from uploaded XML
   const handleFieldsExtracted = useCallback((data: XMLData) => {
-    xmlManager.setData(data); // Set XML data in xmlManager
+    xmlManager.setData(data); 
     const uniqueFields = new Set(data.items.flatMap((item) => Object.keys(item)));
     const newMappingFields = Array.from(uniqueFields).map((field) => ({
       name: field,
@@ -233,7 +213,6 @@ function MainApp() {
     setLastSavedState({ mappings: [], comments: {}, mappingFields: newMappingFields });
   }, [xmlManager]);
 
-  // Handle comment submission
   const handleAddComment = () => {
     if (newComment.trim() && selectedShopId) {
       addComment(selectedShopId, newComment);
@@ -241,7 +220,6 @@ function MainApp() {
     }
   };
 
-  // Handle comment deletion
   const handleDeleteComment = (commentIndex: number) => {
     if (selectedShopId) {
       deleteComment(selectedShopId, commentIndex);
@@ -275,10 +253,8 @@ function MainApp() {
       const xmlString = xmlManager.generateXML(updatedData.items);
       console.log('Generated XML:', xmlString);
 
-      // Save the modified XML string to state
       setModifiedXMLString(xmlString);
 
-      // Show a success notification (without download)
       toast.success('Changes applied successfully!', {
         position: 'top-right',
         autoClose: 3000,
@@ -303,27 +279,25 @@ function MainApp() {
   }, [xmlManager, tempMappings]);
 
   const handleDeleteShop = () => {
-    console.log("Selected shop ID to delete:", selectedShopId); // Add this
+    console.log("Selected shop ID to delete:", selectedShopId); 
     if (selectedShopId) {
       const confirmDelete = window.confirm(
         'Are you sure you want to delete this shop? This action cannot be undone.'
       );
 
       if (confirmDelete) {
-        console.log("Shop IDs before deletion:", shops.map(s => s.id)); // Add this
+        console.log("Shop IDs before deletion:", shops.map(s => s.id)); 
         deleteShop(selectedShopId);
       }
     }
   };
 
-  // Save to localStorage
   useEffect(() => {
     if (modifiedXMLString) {
       localStorage.setItem('modifiedXMLString', modifiedXMLString);
     }
   }, [modifiedXMLString]);
 
-  // Load from localStorage on component mount
   useEffect(() => {
     const savedXMLString = localStorage.getItem('modifiedXMLString');
     if (savedXMLString) {
@@ -331,7 +305,6 @@ function MainApp() {
     }
   }, []);
 
-  // Load XML content for the selected shop
   useEffect(() => {
     if (selectedShopId) {
       const selectedShop = shops.find((shop) => shop.id === selectedShopId);
@@ -365,7 +338,7 @@ function MainApp() {
         const schemaArray = Array.from(schema.entries()).map(([name, props]) => ({
           name,
           ...props,
-        })); // <-- Fixed: Added the missing parenthesis here
+        }));
 
         handleFieldsExtracted({ items: itemsData, schema: schemaArray });
       }
@@ -395,14 +368,12 @@ function MainApp() {
         const mappedData = xmlManager.applyMappings(tempMappings);
 
         const previewRows = xmlData.items.map((item, index) => {
-          // 1. First try to find the actual ID field in your data
           const idField = Object.keys(item).find(key =>
             key.toLowerCase().includes('id') ||
             key.toLowerCase().includes('sku') ||
             key.toLowerCase().includes('code')
           );
 
-          // 2. Then try to find the actual title field
           const titleField = Object.keys(item).find(key =>
             key.toLowerCase().includes('title') ||
             key.toLowerCase().includes('name') ||
@@ -413,6 +384,7 @@ function MainApp() {
             productId: idField ? item[idField] : `ITEM_${index + 1}`,
             productTitle: titleField ? item[titleField] : 'Product',
             fieldName: field.name,
+            originalValue: item[field.name] || 'N/A',
             mappedValue: mappedData.items[index]?.[field.name] || 'N/A'
           };
         });
@@ -430,7 +402,6 @@ function MainApp() {
     setShowPreviewDialog(true);
   };
 
-  // Handle channel field change in preview dialog
   const handleChannelFieldChange = (index: number, value: string) => {
     setPreviewData((prev) =>
       prev.map((row, i) =>
@@ -464,11 +435,9 @@ function MainApp() {
         />
       )}
 
-      {/* Main Content */}
       <div className="flex-1 p-8 overflow-y-auto">
         <ToastContainer />
 
-        {/* Shop Selection */}
         {!selectedShopId ? (
           <ShopDashboard onSelectShop={setSelectedShopId} />
         ) : (
@@ -479,13 +448,11 @@ function MainApp() {
               <h6 className="text-2xl font-semibold mt-4">Shop ID: {selectedShopId}</h6>
             </h2> */}
 
-            {/* Comments Dialog */}
             {showCommentsDialog && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white p-6 rounded-lg w-full max-w-2xl">
                   <h2 className="text-lg font-semibold mb-4">Comments</h2>
                   <div className="space-y-4">
-                    {/* Display Comments */}
                     {commentsList.map((comment, index) => (
                       <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
                         <div>
@@ -504,7 +471,6 @@ function MainApp() {
                     ))}
                   </div>
 
-                  {/* Add Comment */}
                   <div className="mt-6">
                     <textarea
                       value={newComment}
@@ -520,7 +486,6 @@ function MainApp() {
                     </button>
                   </div>
 
-                  {/* Close Dialog */}
                   <div className="mt-4 flex justify-end">
                     <button
                       onClick={() => setShowCommentsDialog(false)}
@@ -533,12 +498,10 @@ function MainApp() {
               </div>
             )}
 
-            {/* Settings View */}
             {showSettings ? (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 className="text-lg font-semibold mb-4">Settings</h3>
 
-                {/* Change Shop Name */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Change Shop Name
@@ -566,7 +529,6 @@ function MainApp() {
                   </button>
                 )} */}
 
-                {/* Re-upload XML */}
                 <div className="mb-6">
                   <h4 className="text-md font-semibold mb-2">Re-upload XML</h4>
                   <XMLUploader
@@ -575,7 +537,6 @@ function MainApp() {
                   />
                 </div>
 
-                {/* Delete Shop */}
                 <div>
                   <button
                     onClick={handleDeleteShop}
@@ -585,7 +546,6 @@ function MainApp() {
                   </button>
                 </div>
 
-                {/* Save and Discard Changes Buttons */}
                 <div className="flex justify-end gap-4 mt-6">
                   <button
                     onClick={handleDiscardChanges}
@@ -605,7 +565,6 @@ function MainApp() {
               </div>
             ) : (
               <>
-                {/* XML Upload Section (Visible only during shop creation) */}
                 {!shops.find((shop) => shop.id === selectedShopId)?.xmlContent && (
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">Upload XML File</h2>
@@ -615,7 +574,6 @@ function MainApp() {
                     />
                   </div>
                 )}
-                {/* Save and Discard Changes Buttons */}
                 <div className="flex justify-end gap-4 mt-6 mb-6">
                   <button
                     onClick={handleDiscardChanges}
@@ -640,7 +598,6 @@ function MainApp() {
                   )}
                 </div>
 
-                {/* Field Mapping Section */}
                 {tempMappingFields.length > 0 && (
                   <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                     {tempMappingFields.map((field) => (
@@ -677,6 +634,7 @@ function MainApp() {
                         <th className="border border-gray-300 p-2">Product ID</th>
                         <th className="border border-gray-300 p-2">Product Title</th>
                         <th className="border border-gray-300 p-2">Field</th>
+                        <th className="border border-gray-300 p-2">Original Value</th>
                         <th className="border border-gray-300 p-2">Mapped Value</th>
                       </tr>
                     </thead>
@@ -686,6 +644,13 @@ function MainApp() {
                           <td className="border border-gray-300 p-2 font-mono">{row.productId}</td>
                           <td className="border border-gray-300 p-2">{row.productTitle}</td>
                           <td className="border border-gray-300 p-2 text-gray-600">{row.fieldName}</td>
+                          <td className="border border-gray-300 p-2">
+                            {row.originalValue === 'N/A' ? (
+                              <span className="text-gray-400">N/A</span>
+                            ) : (
+                              row.originalValue
+                            )}
+                          </td>
                           <td className="border border-gray-300 p-2">
                             {row.mappedValue === 'N/A' ? (
                               <span className="text-gray-400">N/A</span>
@@ -734,7 +699,6 @@ function MainApp() {
           </>
         )}
 
-        {/* Empty State */}
         {mappingFields.length === 0 && !selectedShopId && (
           <div className="text-center py-12">
             <p className="text-gray-500">Select a shop and upload an XML file to start mapping fields</p>

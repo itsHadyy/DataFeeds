@@ -3,6 +3,7 @@ import { Search, ChevronDown, MessageSquare, Shapes, PenSquare, Eye, Edit2, Save
 
 interface Field {
   name: string;
+  originalName: string;
   value: string;
   category: string;
 }
@@ -17,8 +18,8 @@ const FieldMapper: React.FC<FieldMapperProps> = ({ fields, onFieldsUpdate }) => 
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState('input');
   const [editingField, setEditingField] = useState<string | null>(null);
-  const [selectedMapping, setSelectedMapping] = useState('Rename'); // Default mapping type
-  const [conditionType, setConditionType] = useState('All Products'); // Toggle between All Products & Only IF
+  const [selectedMapping, setSelectedMapping] = useState('Rename');
+  const [conditionType, setConditionType] = useState('All Products');
   const [selectedField, setSelectedField] = useState<string | null>(null);
 
   const categories = ['General', 'Product Info', 'Pricing', 'Media'];
@@ -41,22 +42,33 @@ const FieldMapper: React.FC<FieldMapperProps> = ({ fields, onFieldsUpdate }) => 
     setActiveDropdown(null);
   };
 
-  const handleCategoryChange = (fieldName: string, newCategory: string) => {
+  const handleCategoryChange = (originalName: string, newCategory: string) => {
     const updatedFields = fields.map(field =>
-      field.name === fieldName ? { ...field, category: newCategory } : field
+      field.originalName === originalName ? { ...field, category: newCategory } : field
     );
     onFieldsUpdate(updatedFields);
   };
 
-  const handleValueChange = (fieldName: string, newValue: string) => {
+  const handleNameChange = (originalName: string, newName: string) => {
     const updatedFields = fields.map(field =>
-      field.name === fieldName ? { ...field, value: newValue } : field
+      field.originalName === originalName ? { ...field, name: newName } : field
     );
     onFieldsUpdate(updatedFields);
   };
 
-  const handleFieldSelection = (fieldName: string) => {
-    setSelectedField(fieldName);
+  const handleValueChange = (originalName: string, newValue: string) => {
+    const updatedFields = fields.map(field =>
+      field.originalName === originalName ? { ...field, value: newValue } : field
+    );
+    onFieldsUpdate(updatedFields);
+  };
+
+  const handleFieldSelection = (originalName: string) => {
+    setSelectedField(originalName);
+  };
+
+  const saveEdit = () => {
+    setEditingField(null);
   };
 
   return (
@@ -116,8 +128,8 @@ const FieldMapper: React.FC<FieldMapperProps> = ({ fields, onFieldsUpdate }) => 
                   >
                     <option value="">Select field</option>
                     {fields.map((f) => (
-                      <option key={f.name} value={f.name}>
-                        {f.name}
+                      <option key={f.originalName} value={f.originalName}>
+                        {f.originalName}
                       </option>
                     ))}
                   </select>
@@ -128,17 +140,15 @@ const FieldMapper: React.FC<FieldMapperProps> = ({ fields, onFieldsUpdate }) => 
               <div className="col-span-3">
                 <div className="flex rounded-md overflow-hidden border">
                   <button
-                    className={`flex-1 px-3 py-2 text-sm ${
-                      conditionType === 'All Products' ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-50'
-                    }`}
+                    className={`flex-1 px-3 py-2 text-sm ${conditionType === 'All Products' ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-50'
+                      }`}
                     onClick={() => setConditionType('All Products')}
                   >
                     All Products
                   </button>
                   <button
-                    className={`flex-1 px-3 py-2 text-sm ${
-                      conditionType === 'Only IF' ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-50'
-                    }`}
+                    className={`flex-1 px-3 py-2 text-sm ${conditionType === 'Only IF' ? 'bg-blue-600 text-white' : 'bg-white hover:bg-gray-50'
+                      }`}
                     onClick={() => setConditionType('Only IF')}
                   >
                     Only IF
@@ -164,32 +174,70 @@ const FieldMapper: React.FC<FieldMapperProps> = ({ fields, onFieldsUpdate }) => 
       {/* Mapped Fields Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         {fields.map((field) => (
-          <div key={field.name} className="px-6 py-4 border-b">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-900">{field.name}</span>
-              {editingField === field.name ? (
+          <div key={field.originalName} className="px-6 py-4 border-b">
+            <div className="flex justify-between items-center gap-4">
+              {/* Field Name Column */}
+              <div className="flex-1 min-w-0">
+                {editingField === field.originalName ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={field.name}
+                      onChange={(e) => handleNameChange(field.originalName, e.target.value)}
+                      className="border rounded px-2 py-1 flex-1"
+                    />
+                    <button
+                      onClick={saveEdit}
+                      className="p-1 text-green-600 hover:text-green-800"
+                    >
+                      <Save className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-900 truncate">
+                      {field.originalName}
+                    </span>
+                    {field.name !== field.originalName && (
+                      <span className="text-xs text-gray-500 truncate">
+                        → Mapped to: {field.name}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Field Value Column */}
+              <div className="flex-1 min-w-0">
                 <input
                   type="text"
                   value={field.value}
-                  onChange={(e) => handleValueChange(field.name, e.target.value)}
-                  className="border rounded px-2 py-1 w-full"
+                  onChange={(e) => handleValueChange(field.originalName, e.target.value)}
+                  className="w-full border rounded px-2 py-1 text-sm text-gray-500"
                 />
-              ) : (
-                <span className="text-sm text-gray-500">{field.value}</span>
-              )}
-              <select
-                value={field.category}
-                onChange={(e) => handleCategoryChange(field.name, e.target.value)}
-                className="border rounded px-2 py-1"
+              </div>
+
+              {/* Category Column */}
+              <div className="w-40">
+                <select
+                  value={field.category}
+                  onChange={(e) => handleCategoryChange(field.originalName, e.target.value)}
+                  className="w-full border rounded px-2 py-1 text-sm"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Edit Button */}
+              <button
+                onClick={() => setEditingField(field.originalName)}
+                className="p-2 text-blue-600 hover:text-blue-800"
               >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-              <button onClick={() => setEditingField(field.name)}>
-                <Edit2 className="h-4 w-4 text-blue-600" />
+                <Edit2 className="h-4 w-4" />
               </button>
             </div>
           </div>

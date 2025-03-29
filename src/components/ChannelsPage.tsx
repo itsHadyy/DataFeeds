@@ -171,7 +171,7 @@ const ChannelsPage: React.FC = () => {
                                                     onClick={() => handleRemap(channelId)}
                                                     className="text-blue-600 hover:text-blue-900 mr-4"
                                                 >
-                                                    Edit Feed
+                                                    Edit Channel
                                                 </button>
                                             </td>
                                         </tr>
