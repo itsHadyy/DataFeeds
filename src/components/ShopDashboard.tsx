@@ -7,11 +7,7 @@ import { XMLManager } from "../services/XMLManager";
 import { Search, MoreVertical } from "lucide-react";
 import { useRef, useEffect } from "react";
 
-interface ShopDashboardProps {
-    onSelectShop: (shopId: string) => void;
-}
-
-const ShopDashboard: React.FC<ShopDashboardProps> = ({ onSelectShop }) => {
+const ShopDashboard: React.FC = () => {
     const navigate = useNavigate();
     const { shops, addShop, deleteShop, updateShop } = useShops();
     const [editingShopId, setEditingShopId] = useState<string | null>(null);
@@ -48,11 +44,6 @@ const ShopDashboard: React.FC<ShopDashboardProps> = ({ onSelectShop }) => {
         return xmlManager.generateDownloadLink(modifiedXML);
     };
 
-    const handleSelectShop = (shopId: string) => {
-        setSelectedShopId(shopId);
-        onSelectShop(shopId);
-    };
-
     const handleDeleteShop = (shopId: string) => {
         deleteShop(shopId);
         setShowDeleteModal(null);
@@ -62,6 +53,9 @@ const ShopDashboard: React.FC<ShopDashboardProps> = ({ onSelectShop }) => {
         navigate(`/channels?shopId=${shopId}`);
     };
 
+    const handleNavigateToInternalFields = (shopId: string) => {
+        navigate(`/shops/${shopId}/mapping`);
+    };
 
     const [menuPosition, setMenuPosition] = useState<{ top: number, left: number } | null>(null);
     const menuButtonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
@@ -143,7 +137,11 @@ const ShopDashboard: React.FC<ShopDashboardProps> = ({ onSelectShop }) => {
                                         className="hover:bg-gray-50"
                                     >
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{shop.id}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <td
+                                            onClick={(e) => {
+                                                handleNavigateToInternalFields(shop.id);
+                                            }}
+                                            className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 hover:bg-gray-100 internal">
                                             {editingShopId === shop.id ? (
                                                 <input
                                                     type="text"
@@ -219,7 +217,7 @@ const ShopDashboard: React.FC<ShopDashboardProps> = ({ onSelectShop }) => {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                handleSelectShop(showOptionsMenu);
+                                handleNavigateToInternalFields(showOptionsMenu);
                                 setShowOptionsMenu(null);
                             }}
                             className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
@@ -251,14 +249,6 @@ const ShopDashboard: React.FC<ShopDashboardProps> = ({ onSelectShop }) => {
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
-
-            {/* XML Uploader for Selected Shop */}
-            {selectedShopId && (
-                <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold mb-4">Upload XML for {shops.find(shop => shop.id === selectedShopId)?.name}</h3>
-                    <XMLUploader shopId={selectedShopId} onFieldsExtracted={(data) => console.log(data)} />
                 </div>
             )}
         </div>

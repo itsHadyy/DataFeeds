@@ -3,7 +3,8 @@ import { customAlphabet } from "nanoid";
 
 interface Comment {
     text: string;
-    timestamp: Date;
+    timestamp: string;
+    field?: string;
 }
 
 interface Channel {
@@ -55,17 +56,8 @@ const useShops = () => {
     }, [nanoid]);
 
     const deleteShop = useCallback((shopId: string) => {
-        console.log("Deleting shop with ID:", shopId);
-        console.log("Current shops before deletion:", shops); // Add this line
-        setShops((prevShops) => {
-            const newShops = prevShops.filter((shop) => {
-                console.log("Comparing:", shop.id, "with", shopId);
-                return shop.id !== shopId;
-            });
-            console.log("Shops after deletion:", newShops); // Add this line
-            return newShops;
-        });
-    }, [shops]); // Add shops to dependencies
+        setShops((prevShops) => prevShops.filter(shop => shop.id !== shopId));
+    }, []);
 
     const updateShop = useCallback((shopId: string, newName: string) => {
         setShops((prevShops) =>
@@ -105,7 +97,7 @@ const useShops = () => {
         }
     };
 
-    const addComment = useCallback((shopId: string, comment: string) => {
+    const addComment = useCallback((shopId: string, comment: Comment) => {
         setShops((prevShops) =>
             prevShops.map((shop) =>
                 shop.id === shopId
@@ -113,7 +105,7 @@ const useShops = () => {
                         ...shop,
                         comments: [
                             ...(shop.comments || []),
-                            { text: comment, timestamp: new Date() },
+                            comment,
                         ],
                     }
                     : shop
@@ -210,12 +202,33 @@ const useShops = () => {
         localStorage.removeItem(STORAGE_KEY);
     }, []);
 
-    const getShopById = useCallback((shopId: string): Shop | undefined => {
-        return shops.find((shop) => shop.id === shopId);
+    const getShopById = useCallback((shopId: string) => {
+        return shops.find(shop => shop.id === shopId);
     }, [shops]);
+
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchShops = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch('/api/shops');
+                const data = await response.json();
+                setShops(data);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to load shops');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchShops();
+    }, []);
 
     return {
         shops,
+        selectedShop: (shopId: string) => shops.find(shop => shop.id === shopId),
         addShop,
         deleteShop,
         updateShop,
@@ -230,6 +243,8 @@ const useShops = () => {
         clearShops,
         getShopById,
         updateMappedChannels,
+        loading,
+        error,
     };
 };
 

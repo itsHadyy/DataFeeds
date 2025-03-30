@@ -139,36 +139,16 @@ const ChannelMappingPage: React.FC = () => {
     currentPage * itemsPerPage
   );
 
-  // Dummy functions for NavigationBar props
-  const setShowCommentsDialog = (show: boolean) => {
-    console.log("setShowCommentsDialog:", show);
-  };
-
-  const setShowSettings = (show: boolean) => {
-    console.log("setShowSettings:", show);
-  };
-
-  const onInternalFieldsClick = () => {
-    console.log("onInternalFieldsClick");
-    navigate('/');
-  };
-
   const handleBackClick = () => {
     navigate(`/channels?shopId=${shopId}`);
   };
 
-  // Validate channelId and shop data
   if (!channelId || !channelSchemas[channelId]) {
     return (
       <div className="flex min-h-screen min-w-screen">
         <NavigationBar
           selectedShopId={shopId}
           shops={shops}
-          setShowCommentsDialog={setShowCommentsDialog}
-          setShowSettings={setShowSettings}
-          handleBackClick={handleBackClick}
-          showSettings={false}
-          onInternalFieldsClick={onInternalFieldsClick}
         />
         <div className="p-4">
           <div>Invalid channel ID: {channelId}</div>
@@ -183,11 +163,6 @@ const ChannelMappingPage: React.FC = () => {
         <NavigationBar
           selectedShopId={shopId}
           shops={shops}
-          setShowCommentsDialog={setShowCommentsDialog}
-          setShowSettings={setShowSettings}
-          handleBackClick={handleBackClick}
-          showSettings={false}
-          onInternalFieldsClick={onInternalFieldsClick}
         />
         <div className="p-4">
           <div>Shop ID is required</div>
@@ -202,11 +177,6 @@ const ChannelMappingPage: React.FC = () => {
         <NavigationBar
           selectedShopId={shopId}
           shops={shops}
-          setShowCommentsDialog={setShowCommentsDialog}
-          setShowSettings={setShowSettings}
-          handleBackClick={handleBackClick}
-          showSettings={false}
-          onInternalFieldsClick={onInternalFieldsClick}
         />
         <div className="p-4">
           <div>Shop not found. Shop ID: {shopId}</div>
@@ -423,11 +393,6 @@ const ChannelMappingPage: React.FC = () => {
       <NavigationBar
         selectedShopId={shopId}
         shops={shops}
-        setShowCommentsDialog={setShowCommentsDialog}
-        setShowSettings={setShowSettings}
-        handleBackClick={handleBackClick}
-        showSettings={false}
-        onInternalFieldsClick={onInternalFieldsClick}
       />
       <div className="p-4 flex-1">
         <ToastContainer />
