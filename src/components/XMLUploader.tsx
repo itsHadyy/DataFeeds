@@ -4,9 +4,9 @@ import { XMLData } from '../types/xml';
 import useShops from "../hooks/useShops";
 
 interface XMLUploaderProps {
-  onFieldsExtracted: (data: XMLData) => void;
+  onFieldsExtracted?: (data: XMLData) => void;
   shopId: string;
-  onUploadSuccess?: () => void; // Callback for successful upload
+  onUploadSuccess?: (xmlContent?: string) => void;
 }
 
 const XMLUploader: React.FC<XMLUploaderProps> = ({ onFieldsExtracted, shopId, onUploadSuccess }) => {
@@ -31,36 +31,40 @@ const XMLUploader: React.FC<XMLUploaderProps> = ({ onFieldsExtracted, shopId, on
       const items = xmlDoc.getElementsByTagName('item');
       if (items.length === 0) throw new Error('No items found in XML');
 
-      const schema = new Map<string, { required?: boolean; helpText?: string }>();
-      Array.from(items).forEach((item) => {
-        Array.from(item.children).forEach((child) => {
-          if (!schema.has(child.nodeName)) {
-            schema.set(child.nodeName, {
-              required: child.hasAttribute('required'),
-              helpText: child.getAttribute('description') || undefined,
-            });
-          }
+      // Only process fields extraction if callback is provided
+      if (onFieldsExtracted) {
+        const schema = new Map<string, { required?: boolean; helpText?: string }>();
+        Array.from(items).forEach((item) => {
+          Array.from(item.children).forEach((child) => {
+            if (!schema.has(child.nodeName)) {
+              schema.set(child.nodeName, {
+                required: child.hasAttribute('required'),
+                helpText: child.getAttribute('description') || undefined,
+              });
+            }
+          });
         });
-      });
 
-      const itemsData = Array.from(items).map((item) => {
-        const itemData: { [key: string]: string } = {};
-        Array.from(item.children).forEach((child) => {
-          if (child.textContent) {
-            itemData[child.nodeName] = child.textContent;
-          }
+        const itemsData = Array.from(items).map((item) => {
+          const itemData: { [key: string]: string } = {};
+          Array.from(item.children).forEach((child) => {
+            if (child.textContent) {
+              itemData[child.nodeName] = child.textContent;
+            }
+          });
+          return itemData;
         });
-        return itemData;
-      });
 
-      const schemaArray = Array.from(schema.entries()).map(([name, props]) => ({
-        name,
-        ...props,
-      }));
+        const schemaArray = Array.from(schema.entries()).map(([name, props]) => ({
+          name,
+          ...props,
+        }));
 
-      onFieldsExtracted({ items: itemsData, schema: schemaArray });
+        onFieldsExtracted({ items: itemsData, schema: schemaArray });
+      }
+
       setError(null);
-      setXmlContent(text); // Store the XML content
+      setXmlContent(text);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error parsing XML data');
       console.error(err);
@@ -100,28 +104,16 @@ const XMLUploader: React.FC<XMLUploaderProps> = ({ onFieldsExtracted, shopId, on
   const handleSave = async () => {
     if (xmlContent && shopId) {
       try {
-        // Log the size of the XML content
-        console.log("XML Content Size:", xmlContent.length);
+        await uploadXMLToShop(shopId, xmlContent);
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
 
-        // Check if the content exceeds localStorage quota
-        if (xmlContent.length > 5 * 1024 * 1024) { // 5MB limit
-          throw new Error("XML content is too large for localStorage. Consider using a backend database.");
-        }
-
-        await uploadXMLToShop(shopId, xmlContent); // Save XML content to the shop
-        setSaveSuccess(true); // Show success message
-        setTimeout(() => setSaveSuccess(false), 3000); // Hide success message after 3 seconds
-
-        // Trigger the onUploadSuccess callback if provided
         if (onUploadSuccess) {
-          onUploadSuccess();
+          onUploadSuccess(xmlContent); // Pass the content if needed
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error saving XML');
-        console.error("Error saving XML:", err);
       }
-    } else {
-      setError("No XML content or shop ID provided.");
     }
   };
 

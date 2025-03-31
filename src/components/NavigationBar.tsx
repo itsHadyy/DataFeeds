@@ -15,7 +15,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
 }) => {
     const navigate = useNavigate();
     const { shopId } = useParams<{ shopId: string }>();
-    const { setShowSettings, showComments, setShowComments } = useGlobalUI();
+    const { showComments, setShowComments } = useGlobalUI();
 
     const handleBackClick = () => {
         navigate('/');
@@ -24,6 +24,13 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     const handleInternalFieldsClick = () => {
         if (selectedShopId) {
             navigate(`/shops/${selectedShopId}/mapping`);
+        }
+    };
+
+    // Changed this function to use navigation instead of context
+    const handleSettingsClick = () => {
+        if (selectedShopId) {
+            navigate(`/shops/${selectedShopId}/settings`);
         }
     };
 
@@ -65,7 +72,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                     Channels
                 </button>
                 <button
-                    onClick={() => setShowSettings(true)}
+                    onClick={handleSettingsClick}  // Changed to use the new handler
                     className="w-full flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md mb-2"
                 >
                     <Settings className="h-5 w-5" />

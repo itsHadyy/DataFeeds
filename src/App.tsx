@@ -1,3 +1,4 @@
+// App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
@@ -26,15 +27,15 @@ function App() {
             pauseOnHover
           />
 
-          {/* Global Settings Panel - rendered once at app level */}
-          <SettingsPanel />
-
           <Routes>
             {/* Main dashboard showing all shops */}
             <Route path="/" element={<ShopDashboard />} />
 
             {/* Internal fields mapping for a specific shop */}
             <Route path="/shops/:shopId/mapping" element={<InternalFieldsMapping />} />
+            
+            {/* Add this new route for settings */}
+            <Route path="/shops/:shopId/settings" element={<SettingsPanel />} />
 
             {/* Channels selection page */}
             <Route path="/channels" element={<ChannelsPage />} />
