@@ -13,6 +13,12 @@ interface Channel {
     name: string;
 }
 
+interface XMLMapping {
+    targetField: string;
+    value: string;
+    type?: string;
+}
+
 interface Shop {
     id: string;
     name: string;
@@ -23,6 +29,9 @@ interface Shop {
     isLocked?: boolean;
     channels?: Channel[];
     mappedChannels?: string[];
+    channelMappings?: {
+        [channelId: string]: XMLMapping[];
+    };
 }
 
 const STORAGE_KEY = "shops";
@@ -147,10 +156,26 @@ const useShops = () => {
             prevShops.map((shop) => {
                 if (shop.id === shopId) {
                     const mappedChannels = shop.mappedChannels ? [...shop.mappedChannels, channelId] : [channelId];
-                    return { ...shop, mappedChannels: [...new Set(mappedChannels)] }; // Ensure unique channels
+                    return { ...shop, mappedChannels: [...new Set(mappedChannels)] };
                 }
                 return shop;
             })
+        );
+    }, []);
+
+    const updateShopMappings = useCallback((shopId: string, channelId: string, mappings: XMLMapping[]) => {
+        setShops(prevShops =>
+            prevShops.map(shop =>
+                shop.id === shopId
+                    ? {
+                        ...shop,
+                        channelMappings: {
+                            ...shop.channelMappings,
+                            [channelId]: mappings
+                        }
+                    }
+                    : shop
+            )
         );
     }, []);
 
@@ -247,6 +272,7 @@ const useShops = () => {
         clearShops,
         getShopById,
         updateMappedChannels,
+        updateShopMappings,
         loading,
         error,
     };

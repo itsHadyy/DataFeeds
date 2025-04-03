@@ -54,7 +54,7 @@ const ShopDashboard: React.FC = () => {
     };
 
     const handleNavigateToInternalFields = (shopId: string) => {
-        navigate(`/shops/${shopId}/mapping`);
+        navigate(`/channels?shopId=${shopId}`);
     };
 
     const [menuPosition, setMenuPosition] = useState<{ top: number, left: number } | null>(null);

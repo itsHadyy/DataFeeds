@@ -50,8 +50,7 @@ const channelSchemas: ChannelSchemas = {
     { name: 'image_link' },
     { name: 'availability' },
     { name: 'price' },
-    { name: 'brand, gtin, or mpn' },
-    { name: 'brand, gtin, or mpn', optional: true },
+    { name: 'brand_gtin_or_mpn', optional: true },
   ],
   tiktok: [
     { name: 'sku_id' },
@@ -107,7 +106,7 @@ const ChannelMappingPage: React.FC = () => {
   const shopId = searchParams.get('shopId');
   const navigate = useNavigate();
 
-  const { getShopById, updateMappedChannels, shops } = useShops();
+  const { getShopById, updateMappedChannels, shops, updateShopMappings } = useShops();
   const shop = getShopById(shopId || '');
   const [xmlManager] = useState(() => new XMLManager());
   const [mappingFields, setMappingFields] = useState<XMLField[]>([]);
@@ -222,18 +221,23 @@ const ChannelMappingPage: React.FC = () => {
         xmlManager.setData({ items: itemsData, schema: schemaArray });
 
         const channelSchema = channelSchemas[channelId];
-        const newMappingFields = channelSchema.map((field) => ({
-          name: field.name,
-          value: '',
-          required: !field.optional,
-          helpText: field.helpText || '',
-          optional: field.optional || false,
-        }));
+        const savedMappings = shop.channelMappings?.[channelId] || [];
+
+        const newMappingFields = channelSchema.map((field) => {
+          const savedMapping = savedMappings.find(m => m.targetField === field.name);
+          return {
+            name: field.name,
+            value: savedMapping?.value || '',
+            required: !field.optional,
+            helpText: field.helpText || '',
+            optional: field.optional || false,
+          };
+        });
 
         setMappingFields(newMappingFields);
         setTempMappingFields(newMappingFields);
-        setTempMappings([]);
-        setLastSavedState({ mappings: [], mappingFields: newMappingFields });
+        setTempMappings(savedMappings);
+        setLastSavedState({ mappings: savedMappings, mappingFields: newMappingFields });
       } catch (error) {
         toast.error('Error parsing XML content');
         console.error('XML parsing error:', error);
@@ -332,10 +336,11 @@ const ChannelMappingPage: React.FC = () => {
 
     if (shopId && channelId) {
       updateMappedChannels(shopId, channelId);
+      updateShopMappings(shopId, channelId, tempMappings); // Save the actual mappings
     }
 
     navigate(`/channels?shopId=${shopId}`);
-  }, [tempMappings, tempMappingFields, navigate, shopId, channelId, updateMappedChannels]);
+  }, [tempMappings, tempMappingFields, navigate, shopId, channelId, updateMappedChannels, updateShopMappings]);
 
   const handleDiscardChanges = useCallback(() => {
     setHasUnsavedChanges(false);
