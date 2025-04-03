@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, List, MessageCircle, Settings } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useGlobalUI } from '../contexts/GlobalUI';
 import CommentsPanel from './CommentsPanel';
 
@@ -14,8 +14,19 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     shops,
 }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { shopId } = useParams<{ shopId: string }>();
-    const { showComments, setShowComments } = useGlobalUI();
+    const {
+        showComments,
+        setShowComments,
+        activeCommentField,
+        setActiveCommentField
+    } = useGlobalUI();
+
+    // Helper function to determine if a tab is active
+    const isActiveTab = (path: string) => {
+        return location.pathname.includes(path);
+    };
 
     const handleBackClick = () => {
         navigate('/');
@@ -27,11 +38,18 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
         }
     };
 
-    // Changed this function to use navigation instead of context
     const handleSettingsClick = () => {
         if (selectedShopId) {
             navigate(`/shops/${selectedShopId}/settings`);
         }
+    };
+
+    const handleCommentsClick = () => {
+        // Reset any field-specific comment filter when opening from nav
+        if (!showComments && activeCommentField) {
+            setActiveCommentField(null);
+        }
+        setShowComments(!showComments);
     };
 
     return (
@@ -43,7 +61,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                 </h2>
                 <button
                     onClick={handleBackClick}
-                    className="w-full flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors mb-4"
+                    className="w-full flex items-center gap-2 px-4 py-2 text-gray-700 rounded-md hover:bg-[#D7D3E0] transition-colors mb-4"
                 >
                     <ArrowLeft className="h-4 w-4" />
                     Back to Shops
@@ -52,7 +70,10 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                 {selectedShopId && (
                     <button
                         onClick={handleInternalFieldsClick}
-                        className="w-full flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors mb-4"
+                        className={`w-full flex items-center gap-2 px-4 py-2 rounded-md transition-colors mb-4 ${isActiveTab('mapping')
+                                ? 'bg-[#301D56] text-white hover:bg-[#3a2468]'
+                                : 'text-gray-700 hover:bg-[#D7D3E0]'
+                            }`}
                     >
                         <List className="h-4 w-4" />
                         Internal Fields
@@ -66,21 +87,30 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                             navigate('/channels');
                         }
                     }}
-                    className="w-full flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors mb-4"
+                    className={`w-full flex items-center gap-2 px-4 py-2 rounded-md transition-colors mb-4 ${isActiveTab('channels')
+                            ? 'bg-[#301D56] text-white hover:bg-[#3a2468]'
+                            : 'text-gray-700 hover:bg-[#D7D3E0]'
+                        }`}
                 >
                     <List className="h-4 w-4" />
                     Channels
                 </button>
                 <button
-                    onClick={handleSettingsClick}  // Changed to use the new handler
-                    className="w-full flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md mb-2"
+                    onClick={handleSettingsClick}
+                    className={`w-full flex items-center gap-2 px-4 py-2 rounded-md mb-2 ${isActiveTab('settings')
+                            ? 'bg-[#301D56]/10 text-[#301D56] hover:bg-[#301D56]/20'
+                            : 'text-gray-700 hover:bg-[#D7D3E0]'
+                        }`}
                 >
                     <Settings className="h-5 w-5" />
                     Settings
                 </button>
                 <button
-                    onClick={() => setShowComments(true)}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
+                    onClick={handleCommentsClick}
+                    className={`w-full flex items-center gap-2 px-4 py-2 rounded-md ${showComments && !activeCommentField
+                            ? 'bg-[#301D56]/10 text-[#301D56] hover:bg-[#301D56]/20'
+                            : 'text-gray-700 hover:bg-[#D7D3E0]'
+                        }`}
                 >
                     <MessageCircle className="h-5 w-5" />
                     Comments

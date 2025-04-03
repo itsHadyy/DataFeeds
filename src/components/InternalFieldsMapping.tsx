@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Save, Undo, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import MappingField from './MappingField';
@@ -12,25 +12,15 @@ import { XMLManager } from '../services/XMLManager';
 import useShops from '../hooks/useShops';
 import { useGlobalUI } from '../contexts/GlobalUI';
 
-interface Comment {
-    text: string;
-    timestamp: string;
-    field?: string;
-}
 
 const InternalFieldsMapping: React.FC = () => {
     const { shopId } = useParams<{ shopId: string }>();
-    const navigate = useNavigate();
-    const { showComments, setShowComments, activeCommentField, setActiveCommentField } = useGlobalUI();
+    const {  setShowComments,  setActiveCommentField } = useGlobalUI();
     const [xmlManager] = useState(() => new XMLManager());
-    const [mappingFields, setMappingFields] = useState<XMLField[]>([]);
-    const [mappings, setMappings] = useState<XMLMapping[]>([]);
-    const { shops, uploadXMLToShop, addComment, deleteComment } = useShops();
+    const { shops } = useShops();
 
-    const [newComment, setNewComment] = useState('');
     const [showPreviewDialog, setShowPreviewDialog] = useState(false);
     const [previewField, setPreviewField] = useState<XMLField | null>(null);
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [lastSavedState, setLastSavedState] = useState<{
         mappings: XMLMapping[];
         mappingFields: XMLField[];
@@ -59,7 +49,7 @@ const InternalFieldsMapping: React.FC = () => {
     );
 
     const selectedShop = shops.find((shop) => shop.id === shopId);
-    const commentsList = selectedShop?.comments || [];
+
 
     useEffect(() => {
         if (shopId && selectedShop?.xmlContent) {
@@ -121,7 +111,7 @@ const InternalFieldsMapping: React.FC = () => {
             }
             return [...prev, { ...mapping, targetField: fieldName }];
         });
-        setHasUnsavedChanges(true);
+
         setTempMappingFields((prev) =>
             prev.map((field) =>
                 field.name === fieldName
@@ -131,22 +121,8 @@ const InternalFieldsMapping: React.FC = () => {
         );
     }, []);
 
-    const handleSaveAndProceed = useCallback(() => {
-        setHasUnsavedChanges(false);
-        setMappings(tempMappings);
-        setMappingFields(tempMappingFields);
-        setLastSavedState({ mappings: tempMappings, mappingFields: tempMappingFields });
-
-        toast.success('Changes saved successfully!', {
-            position: 'top-right',
-            autoClose: 3000,
-        });
-
-        navigate(`/channels?shopId=${shopId}`);
-    }, [tempMappings, tempMappingFields, navigate, shopId]);
-
     const handleDiscardChanges = useCallback(() => {
-        setHasUnsavedChanges(false);
+
         setTempMappings(lastSavedState.mappings);
         setTempMappingFields(lastSavedState.mappingFields);
 
@@ -165,9 +141,9 @@ const InternalFieldsMapping: React.FC = () => {
             required: data.schema.find((s) => s.name === field)?.required || false,
             helpText: data.schema.find((s) => s.name === field)?.helpText,
         }));
-        setMappingFields(newMappingFields);
+
         setTempMappingFields(newMappingFields);
-        setMappings([]);
+
         setTempMappings([]);
         setLastSavedState({ mappings: [], mappingFields: newMappingFields });
     }, [xmlManager]);
@@ -236,38 +212,16 @@ const InternalFieldsMapping: React.FC = () => {
         const fieldToSet: string | null = fieldName ? fieldName : null;
         setActiveCommentField(fieldToSet);
         setShowComments(true);
-    };
-
-    const handleAddComment = () => {
-        if (!newComment.trim() || !shopId) return;
-
-        try {
-            addComment(shopId, {
-                text: newComment.trim(),
-                ...(activeCommentField && { field: activeCommentField }),
-                timestamp: new Date().toISOString()
+        
+        // Show comment count badge
+        const fieldComments = selectedShop?.comments?.filter(c => c.field === fieldName) || [];
+        if (fieldComments.length > 0) {
+            toast.info(`${fieldComments.length} comments on ${fieldName}`, {
+                autoClose: 2000
             });
-            setNewComment('');
-            setShowComments(false);
-            setActiveCommentField(null);
-            toast.success('Comment added successfully');
-        } catch (error) {
-            toast.error('Failed to add comment');
-            console.error('Comment error:', error);
         }
     };
 
-    const handleDeleteComment = (commentIndex: number) => {
-        if (!shopId) return;
-
-        try {
-            deleteComment(shopId, commentIndex);
-            toast.info('Comment deleted');
-        } catch (error) {
-            toast.error('Failed to delete comment');
-            console.error('Delete comment error:', error);
-        }
-    };
 
     if (!selectedShop) {
         return <div className="p-8">Shop not found</div>;

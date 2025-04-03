@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { customAlphabet } from "nanoid";
 
 interface Comment {
+    id: string;
     text: string;
     timestamp: string;
     field?: string;
@@ -97,35 +98,6 @@ const useShops = () => {
         }
     };
 
-    const addComment = useCallback((shopId: string, comment: Comment) => {
-        setShops((prevShops) =>
-            prevShops.map((shop) =>
-                shop.id === shopId
-                    ? {
-                        ...shop,
-                        comments: [
-                            ...(shop.comments || []),
-                            comment,
-                        ],
-                    }
-                    : shop
-            )
-        );
-    }, []);
-
-    const deleteComment = useCallback((shopId: string, commentIndex: number) => {
-        setShops((prevShops) =>
-            prevShops.map((shop) =>
-                shop.id === shopId
-                    ? {
-                        ...shop,
-                        comments: shop.comments?.filter((_, index) => index !== commentIndex),
-                    }
-                    : shop
-            )
-        );
-    }, []);
-
     const addABTest = useCallback((shopId: string, abTest: string) => {
         setShops((prevShops) =>
             prevShops.map((shop) =>
@@ -208,6 +180,38 @@ const useShops = () => {
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const addComment = useCallback((shopId: string, comment: Omit<Comment, 'id' | 'timestamp'>) => {
+        const newComment: Comment = {
+            ...comment,
+            id: nanoid(),
+            timestamp: new Date().toISOString() // Proper ISO format
+        };
+
+        setShops((prevShops) =>
+            prevShops.map((shop) =>
+                shop.id === shopId
+                    ? {
+                        ...shop,
+                        comments: [...(shop.comments || []), newComment],
+                    }
+                    : shop
+            )
+        );
+    }, [nanoid]);
+
+    const deleteComment = useCallback((shopId: string, commentId: string) => {
+        setShops((prevShops) =>
+            prevShops.map((shop) =>
+                shop.id === shopId
+                    ? {
+                        ...shop,
+                        comments: shop.comments?.filter(comment => comment.id !== commentId),
+                    }
+                    : shop
+            )
+        );
+    }, []);
 
     useEffect(() => {
         const fetchShops = async () => {

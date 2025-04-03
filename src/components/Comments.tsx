@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 
-// Define the Comment interface
+
 interface Comment {
     text: string;
     timestamp: Date;
 }
 
-// Update CommentsProps to use the Comment interface
+
 interface CommentsProps {
     comments: Comment[];
     onAddComment: (comment: string) => void;
