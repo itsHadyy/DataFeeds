@@ -23,10 +23,17 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
         setActiveCommentField
     } = useGlobalUI();
 
-    // Helper function to determine if a tab is active
     const isActiveTab = (path: string) => {
+        if (path === 'channels') {
+            return location.pathname.includes('channels') ||
+                location.pathname.includes('channel-mapping');
+        }
+        if (path === 'mapping') {
+            return location.pathname === `/shops/${shopId}/mapping`;
+        }
         return location.pathname.includes(path);
     };
+
 
     const handleBackClick = () => {
         navigate('/');
@@ -45,7 +52,7 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
     };
 
     const handleCommentsClick = () => {
-        // Reset any field-specific comment filter when opening from nav
+
         if (!showComments && activeCommentField) {
             setActiveCommentField(null);
         }
@@ -71,8 +78,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                     <button
                         onClick={handleInternalFieldsClick}
                         className={`w-full flex items-center gap-2 px-4 py-2 rounded-md transition-colors mb-4 ${isActiveTab('mapping')
-                                ? 'bg-[#301D56] text-white hover:bg-[#3a2468]'
-                                : 'text-gray-700 hover:bg-[#D7D3E0]'
+                            ? 'bg-[#301D56] text-white hover:bg-[#3a2468]'
+                            : 'text-gray-700 hover:bg-[#D7D3E0]'
                             }`}
                     >
                         <List className="h-4 w-4" />
@@ -88,8 +95,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                         }
                     }}
                     className={`w-full flex items-center gap-2 px-4 py-2 rounded-md transition-colors mb-4 ${isActiveTab('channels')
-                            ? 'bg-[#301D56] text-white hover:bg-[#3a2468]'
-                            : 'text-gray-700 hover:bg-[#D7D3E0]'
+                        ? 'bg-[#301D56] text-white hover:bg-[#3a2468]'
+                        : 'text-gray-700 hover:bg-[#D7D3E0]'
                         }`}
                 >
                     <List className="h-4 w-4" />
@@ -98,8 +105,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                 <button
                     onClick={handleSettingsClick}
                     className={`w-full flex items-center gap-2 px-4 py-2 rounded-md mb-2 ${isActiveTab('settings')
-                            ? 'bg-[#301D56]/10 text-[#301D56] hover:bg-[#301D56]/20'
-                            : 'text-gray-700 hover:bg-[#D7D3E0]'
+                        ? 'bg-[#301D56]/10 text-[#301D56] hover:bg-[#301D56]/20'
+                        : 'text-gray-700 hover:bg-[#D7D3E0]'
                         }`}
                 >
                     <Settings className="h-5 w-5" />
@@ -108,8 +115,8 @@ const NavigationBar: React.FC<NavigationBarProps> = ({
                 <button
                     onClick={handleCommentsClick}
                     className={`w-full flex items-center gap-2 px-4 py-2 rounded-md ${showComments && !activeCommentField
-                            ? 'bg-[#301D56]/10 text-[#301D56] hover:bg-[#301D56]/20'
-                            : 'text-gray-700 hover:bg-[#D7D3E0]'
+                        ? 'bg-[#301D56]/10 text-[#301D56] hover:bg-[#301D56]/20'
+                        : 'text-gray-700 hover:bg-[#D7D3E0]'
                         }`}
                 >
                     <MessageCircle className="h-5 w-5" />
