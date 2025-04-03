@@ -184,6 +184,8 @@ const ChannelMappingPage: React.FC = () => {
     );
   }
 
+  const { getInternalMappings } = useShops();
+
   useEffect(() => {
     if (shop && shop.xmlContent) {
       try {
@@ -222,9 +224,12 @@ const ChannelMappingPage: React.FC = () => {
 
         const channelSchema = channelSchemas[channelId];
         const savedMappings = shop.channelMappings?.[channelId] || [];
+        const internalMappings = getInternalMappings(shop.id);
 
         const newMappingFields = channelSchema.map((field) => {
-          const savedMapping = savedMappings.find(m => m.targetField === field.name);
+          const savedMapping = savedMappings.find(m => m.targetField === field.name) ||
+            internalMappings.find(m => m.targetField === field.name);
+
           return {
             name: field.name,
             value: savedMapping?.value || '',
@@ -236,8 +241,11 @@ const ChannelMappingPage: React.FC = () => {
 
         setMappingFields(newMappingFields);
         setTempMappingFields(newMappingFields);
-        setTempMappings(savedMappings);
-        setLastSavedState({ mappings: savedMappings, mappingFields: newMappingFields });
+        setTempMappings(savedMappings.length ? savedMappings : internalMappings);
+        setLastSavedState({
+          mappings: savedMappings.length ? savedMappings : internalMappings,
+          mappingFields: newMappingFields
+        });
       } catch (error) {
         toast.error('Error parsing XML content');
         console.error('XML parsing error:', error);

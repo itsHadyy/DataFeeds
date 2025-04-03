@@ -54,7 +54,18 @@ const ShopDashboard: React.FC = () => {
     };
 
     const handleNavigateToInternalFields = (shopId: string) => {
-        navigate(`/channels?shopId=${shopId}`);
+        navigate(`/shops/${shopId}/mapping`);
+    };
+
+    const handleShopClick = (shopId: string) => {
+        const shop = shops.find(s => s.id === shopId);
+        if (!shop) return;
+
+        if (shop.xmlContent) {
+            handleNavigateToChannels(shopId);
+        } else {
+            handleNavigateToInternalFields(shopId);
+        }
     };
 
     const [menuPosition, setMenuPosition] = useState<{ top: number, left: number } | null>(null);
@@ -138,10 +149,8 @@ const ShopDashboard: React.FC = () => {
                                     >
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{shop.id}</td>
                                         <td
-                                            onClick={(e) => {
-                                                handleNavigateToInternalFields(shop.id);
-                                            }}
-                                            className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 hover:bg-gray-100 internal">
+                                            onClick={() => handleShopClick(shop.id)}
+                                            className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 hover:bg-gray-100 cursor-pointer">
                                             {editingShopId === shop.id ? (
                                                 <input
                                                     type="text"

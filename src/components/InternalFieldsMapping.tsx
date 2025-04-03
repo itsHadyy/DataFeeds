@@ -11,17 +11,20 @@ import { XMLData, XMLField, XMLMapping } from '../types/xml';
 import { XMLManager } from '../services/XMLManager';
 import useShops from '../hooks/useShops';
 import { useGlobalUI } from '../contexts/GlobalUI';
-
+import { useNavigate } from 'react-router-dom';
 
 const InternalFieldsMapping: React.FC = () => {
+    const navigate = useNavigate();
+    const { updateInternalMappings } = useShops();
+
     const { shopId } = useParams<{ shopId: string }>();
-    const {  setShowComments,  setActiveCommentField } = useGlobalUI();
+    const { setShowComments, setActiveCommentField } = useGlobalUI();
     const [xmlManager] = useState(() => new XMLManager());
     const { shops } = useShops();
 
     const [showPreviewDialog, setShowPreviewDialog] = useState(false);
     const [previewField, setPreviewField] = useState<XMLField | null>(null);
-    const [lastSavedState, setLastSavedState] = useState<{
+    const [originalState, setOriginalState] = useState<{
         mappings: XMLMapping[];
         mappingFields: XMLField[];
     }>({ mappings: [], mappingFields: [] });
@@ -50,43 +53,75 @@ const InternalFieldsMapping: React.FC = () => {
 
     const selectedShop = shops.find((shop) => shop.id === shopId);
 
-
     useEffect(() => {
-        if (shopId && selectedShop?.xmlContent) {
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(selectedShop.xmlContent, 'text/xml');
-            const items = xmlDoc.getElementsByTagName('item');
-            const schema = new Map<string, { required?: boolean; helpText?: string }>();
-
-            Array.from(items).forEach((item) => {
-                Array.from(item.children).forEach((child) => {
-                    if (!schema.has(child.nodeName)) {
-                        schema.set(child.nodeName, {
-                            required: child.hasAttribute('required'),
-                            helpText: child.getAttribute('description') || undefined,
-                        });
-                    }
-                });
-            });
-
-            const itemsData = Array.from(items).map((item) => {
-                const itemData: { [key: string]: string } = {};
-                Array.from(item.children).forEach((child) => {
-                    if (child.textContent) {
-                        itemData[child.nodeName] = child.textContent;
-                    }
-                });
-                return itemData;
-            });
-
-            const schemaArray = Array.from(schema.entries()).map(([name, props]) => ({
-                name,
-                ...props,
-            }));
-
-            handleFieldsExtracted({ items: itemsData, schema: schemaArray });
+        if (shopId && selectedShop) {
+            // Initialize with saved mappings if they exist, otherwise use empty array
+            const savedMappings = selectedShop.internalMappings ? [...selectedShop.internalMappings] : [];
+            setTempMappings(savedMappings);
+            
+            // Parse XML content if it exists
+            if (selectedShop.xmlContent) {
+                parseAndInitializeXML(selectedShop.xmlContent, savedMappings);
+            }
         }
     }, [shopId, selectedShop]);
+
+    const parseAndInitializeXML = (xmlContent: string, savedMappings: XMLMapping[] = []) => {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+        const items = xmlDoc.getElementsByTagName('item');
+        const schema = new Map<string, { required?: boolean; helpText?: string }>();
+
+        Array.from(items).forEach((item) => {
+            Array.from(item.children).forEach((child) => {
+                if (!schema.has(child.nodeName)) {
+                    schema.set(child.nodeName, {
+                        required: child.hasAttribute('required'),
+                        helpText: child.getAttribute('description') || undefined,
+                    });
+                }
+            });
+        });
+
+        const itemsData = Array.from(items).map((item) => {
+            const itemData: { [key: string]: string } = {};
+            Array.from(item.children).forEach((child) => {
+                if (child.textContent) {
+                    itemData[child.nodeName] = child.textContent;
+                }
+            });
+            return itemData;
+        });
+
+        const schemaArray = Array.from(schema.entries()).map(([name, props]) => ({
+            name,
+            ...props,
+        }));
+
+        const xmlData = { items: itemsData, schema: schemaArray };
+        xmlManager.setData(xmlData);
+
+        const uniqueFields = new Set(xmlData.items.flatMap((item) => Object.keys(item)));
+        const newMappingFields = Array.from(uniqueFields).map((field) => ({
+            name: field,
+            value: '',
+            required: xmlData.schema.find((s) => s.name === field)?.required || false,
+            helpText: xmlData.schema.find((s) => s.name === field)?.helpText,
+        }));
+
+        // Apply saved mappings to fields if they exist
+        if (savedMappings && savedMappings.length > 0) {
+            savedMappings.forEach(mapping => {
+                const fieldIndex = newMappingFields.findIndex(f => f.name === mapping.targetField);
+                if (fieldIndex >= 0) {
+                    newMappingFields[fieldIndex].value = mapping.value || '';
+                }
+            });
+        }
+
+        setTempMappingFields(newMappingFields);
+        setOriginalState({ mappings: savedMappings || [], mappingFields: newMappingFields });
+    };
 
     const getFieldOptions = useCallback((xmlData: XMLData | null): FieldOption[] => {
         if (!xmlData) return [];
@@ -122,15 +157,15 @@ const InternalFieldsMapping: React.FC = () => {
     }, []);
 
     const handleDiscardChanges = useCallback(() => {
-
-        setTempMappings(lastSavedState.mappings);
-        setTempMappingFields(lastSavedState.mappingFields);
+        // Reset to the original state (either the saved mappings or the initial state if no mappings were saved)
+        setTempMappings(originalState.mappings);
+        setTempMappingFields(originalState.mappingFields);
 
         toast.info('Changes discarded successfully!', {
             position: 'top-right',
             autoClose: 3000,
         });
-    }, [lastSavedState]);
+    }, [originalState]);
 
     const handleFieldsExtracted = useCallback((data: XMLData) => {
         xmlManager.setData(data);
@@ -143,15 +178,14 @@ const InternalFieldsMapping: React.FC = () => {
         }));
 
         setTempMappingFields(newMappingFields);
-
         setTempMappings([]);
-        setLastSavedState({ mappings: [], mappingFields: newMappingFields });
+        setOriginalState({ mappings: [], mappingFields: newMappingFields });
     }, [xmlManager]);
 
     const handleApplyChanges = useCallback(() => {
         const xmlData = xmlManager.getData();
-        if (!xmlData || tempMappings.length === 0) {
-            toast.error('No XML data or mappings available.');
+        if (!xmlData) {
+            toast.error('No XML data available.');
             return;
         }
 
@@ -159,11 +193,28 @@ const InternalFieldsMapping: React.FC = () => {
         if (updatedData) {
             const xmlString = xmlManager.generateXML(updatedData.items);
             setModifiedXMLString(xmlString);
-            toast.success('Changes applied successfully!');
+
+            // Save the mappings
+            if (shopId) {
+                updateInternalMappings(shopId, tempMappings);
+                // Update the original state to the newly saved state
+                setOriginalState({
+                    mappings: tempMappings,
+                    mappingFields: tempMappingFields
+                });
+            }
+
+            toast.success('Changes applied and saved successfully!');
         } else {
             toast.error('Failed to apply mappings.');
         }
-    }, [xmlManager, tempMappings]);
+    }, [xmlManager, tempMappings, tempMappingFields, shopId, updateInternalMappings]);
+
+    const handleNavigateToChannels = useCallback(() => {
+        if (shopId) {
+            navigate(`/channels?shopId=${shopId}`);
+        }
+    }, [navigate, shopId]);
 
     const handlePreviewClick = (field: XMLField) => {
         setPreviewField(field);
@@ -212,7 +263,7 @@ const InternalFieldsMapping: React.FC = () => {
         const fieldToSet: string | null = fieldName ? fieldName : null;
         setActiveCommentField(fieldToSet);
         setShowComments(true);
-        
+
         // Show comment count badge
         const fieldComments = selectedShop?.comments?.filter(c => c.field === fieldName) || [];
         if (fieldComments.length > 0) {
@@ -221,7 +272,6 @@ const InternalFieldsMapping: React.FC = () => {
             });
         }
     };
-
 
     if (!selectedShop) {
         return <div className="p-8">Shop not found</div>;
@@ -259,6 +309,12 @@ const InternalFieldsMapping: React.FC = () => {
                         className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-blue-700"
                     >
                         Save & Apply
+                    </button>
+                    <button
+                        onClick={handleNavigateToChannels}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                    >
+                        Go to Channel Mapping
                     </button>
                     {modifiedXMLString && (
                         <button

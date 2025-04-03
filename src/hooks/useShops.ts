@@ -32,6 +32,7 @@ interface Shop {
     channelMappings?: {
         [channelId: string]: XMLMapping[];
     };
+    internalMappings?: XMLMapping[];
 }
 
 const STORAGE_KEY = "shops";
@@ -275,6 +276,23 @@ const useShops = () => {
         updateShopMappings,
         loading,
         error,
+
+        getInternalMappings: (shopId: string) => {
+            const shop = shops.find(s => s.id === shopId);
+            return shop?.internalMappings || [];
+        },
+        updateInternalMappings: (shopId: string, mappings: XMLMapping[]) => {
+            setShops(prevShops =>
+                prevShops.map(shop =>
+                    shop.id === shopId
+                        ? {
+                            ...shop,
+                            internalMappings: mappings
+                        }
+                        : shop
+                )
+            );
+        }
     };
 };
 
