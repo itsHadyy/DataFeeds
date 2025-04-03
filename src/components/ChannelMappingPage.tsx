@@ -10,6 +10,7 @@ import { FieldOption } from '../types/mapping';
 import { Save, Undo, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { XMLBuilder } from '../services/XMLBuilder';
 import NavigationBar from '../components/NavigationBar';
+import { useGlobalUI } from '../contexts/GlobalUI'
 
 interface ChannelField {
   name: string;
@@ -105,6 +106,7 @@ const ChannelMappingPage: React.FC = () => {
   const searchParams = new URLSearchParams(location.search);
   const shopId = searchParams.get('shopId');
   const navigate = useNavigate();
+  const { setShowComments, setActiveCommentField } = useGlobalUI();
 
   const { getShopById, updateMappedChannels, shops, updateShopMappings } = useShops();
   const shop = getShopById(shopId || '');
@@ -357,9 +359,19 @@ const ChannelMappingPage: React.FC = () => {
     toast.info("Changes discarded.");
   }, [lastSavedState]);
 
-  const handleCommentClick = useCallback(() => {
-    toast.info("Comment functionality not yet implemented");
-  }, []);
+  const handleCommentClick = useCallback((fieldName?: string) => {
+    const fieldToSet: string | null = fieldName ? fieldName : null;
+    setActiveCommentField(fieldToSet);
+    setShowComments(true);
+
+    // Show comment count badge if there are comments
+    const fieldComments = shop?.comments?.filter(c => c.field === fieldName) || [];
+    if (fieldComments.length > 0) {
+      toast.info(`${fieldComments.length} comments on ${fieldName}`, {
+        autoClose: 2000
+      });
+    }
+  }, [shop, setActiveCommentField, setShowComments]);
 
   const handleABTestClick = useCallback(() => {
     toast.info("A/B Test functionality not yet implemented");
@@ -459,7 +471,7 @@ const ChannelMappingPage: React.FC = () => {
                   helpText={field.helpText}
                   onFieldChange={(mapping) => handleFieldChange(field.name, mapping)}
                   onPreviewClick={() => handlePreviewClick(field)}
-                  onCommentClick={handleCommentClick}
+                  onCommentClick={() => handleCommentClick(field.name)}
                   onABTestClick={handleABTestClick}
                   onEditClick={handleEditClick}
                   optional={field.optional}
@@ -478,7 +490,7 @@ const ChannelMappingPage: React.FC = () => {
                   helpText={field.helpText}
                   onFieldChange={(mapping) => handleFieldChange(field.name, mapping)}
                   onPreviewClick={() => handlePreviewClick(field)}
-                  onCommentClick={handleCommentClick}
+                  onCommentClick={() => handleCommentClick(field.name)}
                   onABTestClick={handleABTestClick}
                   onEditClick={handleEditClick}
                   optional={field.optional}

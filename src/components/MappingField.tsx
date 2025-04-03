@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, MessageSquare, Shapes, PenSquare, Eye, Lock, Unlock } from 'lucide-react';
 import { FieldOption } from '../types/mapping';
 import { XMLMapping } from '../types/xml';
@@ -49,11 +49,21 @@ const MappingField: React.FC<MappingFieldProps> = ({
     setSeparator,
   } = actions;
 
-  const [staticValue, setStaticValue] = useState('');
+  const [staticValue, setStaticValue] = useState(
+    mappingType === 'static' && fieldValue ? fieldValue : ''
+  );
   const [condition, setCondition] = useState<'all' | 'onlyIf'>('all');
   const [onlyIfField, setOnlyIfField] = useState<string | null>(null);
   const [onlyIfOperator, setOnlyIfOperator] = useState<string | null>(null);
   const [onlyIfValue, setOnlyIfValue] = useState<string>('');
+  const [showConditionDropdown, setShowConditionDropdown] = useState(false);
+
+  // Lock the field if it's 'id'
+  useEffect(() => {
+    if (fieldName.toLowerCase() === 'id' && !isLocked) {
+      toggleLock();
+    }
+  }, [fieldName, isLocked, toggleLock]);
 
   const mappingTypes = [
     { value: 'rename', label: 'Rename' },
@@ -63,111 +73,66 @@ const MappingField: React.FC<MappingFieldProps> = ({
   ];
 
   const operators = [
-    'is equal to',
-    'is not equal to',
-    'includes',
-    'doesn\'t include',
+    { value: 'is equal to', label: 'Is equal to' },
+    { value: 'is not equal to', label: 'Is not equal to' },
+    { value: 'includes', label: 'Includes' },
+    { value: 'doesn\'t include', label: 'Doesn\'t include' },
   ];
 
-  const handleStaticValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setStaticValue(value);
-
-    const baseMapping = {
+  const buildMappingObject = (): XMLMapping => {
+    const baseMapping: any = {
       targetField: fieldName,
-      type: 'static',
-      value: value,
-      condition: condition,
-      ...(condition === 'onlyIf' && onlyIfField && onlyIfOperator && onlyIfValue
-        ? {
-          onlyIfField,
-          onlyIfOperator,
-          onlyIfValue
-        }
-        : {})
+      type: mappingType,
     };
 
-    onFieldChange(baseMapping);
+    // Add type-specific fields
+    if (mappingType === 'rename') {
+      baseMapping.sourceField = selectedField;
+    } else if (mappingType === 'static') {
+      baseMapping.value = staticValue;
+    } else if (mappingType === 'combine') {
+      baseMapping.fields = selectedFields;
+      baseMapping.separator = separator;
+    }
+
+    // Add condition fields if needed
+    if (condition === 'onlyIf') {
+      baseMapping.condition = {
+        field: onlyIfField || '',
+        operator: onlyIfOperator || '',
+        value: onlyIfValue
+      };
+    } else {
+      baseMapping.condition = 'all';
+    }
+
+    return baseMapping;
   };
+
+  const handleStaticValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setStaticValue(e.target.value);
+    onFieldChange(buildMappingObject());
+  };
+
   const handleFieldSelection = (field: FieldOption) => {
     if (!field) return;
 
     handleFieldSelect(field, () => {
-      const baseMapping = {
-        targetField: fieldName,
-        condition: condition,
-        ...(condition === 'onlyIf' && onlyIfField && onlyIfOperator && onlyIfValue
-          ? {
-            onlyIfField,
-            onlyIfOperator,
-            onlyIfValue
-          }
-          : {})
-      };
-
-      if (mappingType === 'rename') {
-        onFieldChange({
-          ...baseMapping,
-          type: 'rename',
-          sourceField: field.value
-        });
-      } else if (mappingType === 'combine') {
-        onFieldChange({
-          ...baseMapping,
-          type: 'combine',
-          fields: [...selectedFields, field],
-          separator: separator
-        });
-      }
+      onFieldChange(buildMappingObject());
     });
   };
 
   const handleSeparatorChange = (newSeparator: string) => {
     setSeparator(newSeparator);
     if (mappingType === 'combine' && selectedFields.length > 0) {
-      const baseMapping = {
-        targetField: fieldName,
-        type: 'combine',
-        fields: selectedFields,
-        separator: newSeparator,
-        condition: condition,
-        ...(condition === 'onlyIf' && onlyIfField && onlyIfOperator && onlyIfValue
-          ? {
-            onlyIfField,
-            onlyIfOperator,
-            onlyIfValue
-          }
-          : {})
-      };
-      onFieldChange(baseMapping);
+      onFieldChange(buildMappingObject());
     }
   };
 
   const handleMappingTypeSelect = (type: string) => {
     handleMappingTypeChange(type);
-
-    const baseMapping = {
-      targetField: fieldName,
-      type: type as 'empty' | 'static',
-      condition: condition,
-      ...(condition === 'onlyIf' && onlyIfField && onlyIfOperator && onlyIfValue
-        ? {
-          onlyIfField,
-          onlyIfOperator,
-          onlyIfValue
-        }
-        : {})
-    };
-
-    if (type === 'empty') {
-      onFieldChange(baseMapping);
-    } else if (type === 'static') {
-      setStaticValue('');
-      onFieldChange({
-        ...baseMapping,
-        value: ''
-      });
-    }
+    if (type === 'static') setStaticValue('');
+    onFieldChange(buildMappingObject());
   };
 
   const handleAddField = () => {
@@ -182,25 +147,36 @@ const MappingField: React.FC<MappingFieldProps> = ({
 
   const handleConditionChange = (newCondition: 'all' | 'onlyIf') => {
     setCondition(newCondition);
+    setShowConditionDropdown(false);
+    onFieldChange(buildMappingObject());
   };
 
   const handleOnlyIfFieldChange = (field: string) => {
     setOnlyIfField(field);
+    onFieldChange(buildMappingObject());
   };
 
   const handleOnlyIfOperatorChange = (operator: string) => {
     setOnlyIfOperator(operator);
+    onFieldChange(buildMappingObject());
   };
 
   const handleOnlyIfValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOnlyIfValue(e.target.value);
+    onFieldChange(buildMappingObject());
+  };
+
+  const toggleConditionDropdown = () => {
+    if (!isLocked) {
+      setShowConditionDropdown(!showConditionDropdown);
+    }
   };
 
   return (
     <div className="border-b border-gray-200">
       <div className="p-6">
         {/* Header Actions */}
-        <div className="flex items-center justify-between mb-6 border-b pb-4" >
+        <div className="flex items-center justify-between mb-6 border-b pb-4">
           <div className="flex items-center gap-4">
             {/* Comments Button */}
             <button
@@ -215,26 +191,28 @@ const MappingField: React.FC<MappingFieldProps> = ({
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Lock/Unlock Button */}
-            <button
-              onClick={toggleLock}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isLocked
-                ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                }`}
-            >
-              {isLocked ? (
-                <>
-                  <Lock className="h-4 w-4" />
-                  <span>Unlock</span>
-                </>
-              ) : (
-                <>
-                  <Unlock className="h-4 w-4" />
-                  <span>Lock</span>
-                </>
-              )}
-            </button>
+            {/* Lock/Unlock Button - Hidden for 'id' field */}
+            {fieldName.toLowerCase() !== 'id' && (
+              <button
+                onClick={toggleLock}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${isLocked
+                  ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                  }`}
+              >
+                {isLocked ? (
+                  <>
+                    <Lock className="h-4 w-4" />
+                    <span>Unlock</span>
+                  </>
+                ) : (
+                  <>
+                    <Unlock className="h-4 w-4" />
+                    <span>Lock</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -301,8 +279,8 @@ const MappingField: React.FC<MappingFieldProps> = ({
                   onChange={handleStaticValueChange}
                   disabled={isLocked}
                   placeholder="Enter static value..."
-                  className={`w-full px-3 py-2 text-sm border rounded-md ${isLocked ? 'bg-gray-50 cursor-not-allowed' : ''
-                    }`}
+                  className={`w-full px-3 py-2 text-sm border rounded-md ${isLocked ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                  onBlur={() => onFieldChange(buildMappingObject())}
                 />
               ) : (
                 <button
@@ -330,150 +308,116 @@ const MappingField: React.FC<MappingFieldProps> = ({
             </div>
           </div>
 
+          {/* Condition Dropdown */}
           <div className="col-span-2">
-            <div className="flex rounded-md overflow-hidden border">
+            <div className="relative">
               <button
-                onClick={() => {
-                  handleConditionChange('all');
-                  // Update mapping when switching to 'all'
-                  if (mappingType === 'rename' && selectedField) {
-                    onFieldChange({
-                      targetField: fieldName,
-                      type: 'rename',
-                      sourceField: selectedField,
-                      condition: 'all'
-                    });
-                  }
-                  // Add similar updates for other mapping types
-                }}
+                onClick={toggleConditionDropdown}
                 disabled={isLocked}
-                className={`flex-1 px-3 py-2 text-sm bg-white border-r ${isLocked ? 'opacity-75 cursor-not-allowed' : 'hover:bg-gray-50'} ${condition === 'all' ? 'bg-blue-100' : ''}`}
+                className={`w-full px-3 py-2 text-left text-sm border rounded-md flex items-center justify-between bg-white ${isLocked ? 'opacity-75 cursor-not-allowed' : 'hover:bg-gray-50'
+                  }`}
               >
-                All Products
+                <span>{condition === 'all' ? 'All Products' : 'Only If'}</span>
+                <ChevronDown className="h-4 w-4" />
               </button>
-              <button
-                onClick={() => {
-                  handleConditionChange('onlyIf');
-                  // Update mapping when switching to 'onlyIf'
-                  if (mappingType === 'rename' && selectedField) {
-                    onFieldChange({
-                      targetField: fieldName,
-                      type: 'rename',
-                      sourceField: selectedField,
-                      condition: 'onlyIf',
-                      onlyIfField: onlyIfField || '',
-                      onlyIfOperator: onlyIfOperator || '',
-                      onlyIfValue: onlyIfValue
-                    });
-                  }
-                  // Add similar updates for other mapping types
-                }}
-                disabled={isLocked}
-                className={`flex-1 px-3 py-2 text-sm bg-white ${isLocked ? 'opacity-75 cursor-not-allowed' : 'hover:bg-gray-50'} ${condition === 'onlyIf' ? 'bg-blue-100' : ''}`}
-              >
-                Only IF
-              </button>
+
+              {showConditionDropdown && !isLocked && (
+                <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
+                  <button
+                    className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 flex items-center gap-2"
+                    onClick={() => handleConditionChange('all')}
+                  >
+                    <span>All Products</span>
+                  </button>
+                  <button
+                    className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 flex items-center gap-2"
+                    onClick={() => handleConditionChange('onlyIf')}
+                  >
+                    <span>Only If</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
+
           {condition === 'onlyIf' && (
             <div className="col-span-12 mt-4">
-              <div className="flex items-center gap-2">
-                <select
-                  value={onlyIfField || ''}
-                  onChange={(e) => {
-                    handleOnlyIfFieldChange(e.target.value);
-                    // Trigger mapping update when condition changes
-                    if (mappingType === 'rename' && selectedField) {
-                      onFieldChange({
-                        targetField: fieldName,
-                        type: 'rename',
-                        sourceField: selectedField,
-                        condition: 'onlyIf',
-                        onlyIfField: e.target.value,
-                        onlyIfOperator,
-                        onlyIfValue
-                      });
-                    } else if (mappingType === 'static' && staticValue) {
-                      onFieldChange({
-                        targetField: fieldName,
-                        type: 'static',
-                        value: staticValue,
-                        condition: 'onlyIf',
-                        onlyIfField: e.target.value,
-                        onlyIfOperator,
-                        onlyIfValue
-                      });
-                    } else if (mappingType === 'combine' && selectedFields.length > 0) {
-                      onFieldChange({
-                        targetField: fieldName,
-                        type: 'combine',
-                        fields: selectedFields,
-                        separator: separator,
-                        condition: 'onlyIf',
-                        onlyIfField: e.target.value,
-                        onlyIfOperator,
-                        onlyIfValue
-                      });
-                    }
-                  }}
-                  className="p-2 border rounded-md"
-                >
-                  <option value="">Select Input Field</option>
-                  {fieldOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={onlyIfOperator || ''}
-                  onChange={(e) => {
-                    handleOnlyIfOperatorChange(e.target.value);
-                    // Similar update logic as above
-                    if (mappingType === 'rename' && selectedField) {
-                      onFieldChange({
-                        targetField: fieldName,
-                        type: 'rename',
-                        sourceField: selectedField,
-                        condition: 'onlyIf',
-                        onlyIfField,
-                        onlyIfOperator: e.target.value,
-                        onlyIfValue
-                      });
-                    }
-                    // Add similar updates for other mapping types
-                  }}
-                  className="p-2 border rounded-md"
-                >
-                  <option value="">Select Operator</option>
-                  {operators.map((operator) => (
-                    <option key={operator} value={operator}>
-                      {operator}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  value={onlyIfValue}
-                  onChange={(e) => {
-                    setOnlyIfValue(e.target.value);
-                    // Similar update logic as above
-                    if (mappingType === 'rename' && selectedField) {
-                      onFieldChange({
-                        targetField: fieldName,
-                        type: 'rename',
-                        sourceField: selectedField,
-                        condition: 'onlyIf',
-                        onlyIfField,
-                        onlyIfOperator,
-                        onlyIfValue: e.target.value
-                      });
-                    }
-                    // Add similar updates for other mapping types
-                  }}
-                  placeholder="Enter Text"
-                  className="p-2 border rounded-md"
-                />
+              <div className="grid grid-cols-12 gap-4">
+                {/* Field Dropdown */}
+                <div className="col-span-4">
+                  <div className="relative">
+                    <button
+                      onClick={() => toggleDropdown('only-if-field')}
+                      disabled={isLocked}
+                      className={`w-full px-3 py-2 text-left text-sm border rounded-md flex items-center justify-between bg-white ${isLocked ? 'opacity-75 cursor-not-allowed' : 'hover:bg-gray-50'
+                        }`}
+                    >
+                      <span>{onlyIfField || 'Select field'}</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+
+                    {activeDropdown === 'only-if-field' && !isLocked && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
+                        {fieldOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 flex items-center gap-2"
+                            onClick={() => {
+                              handleOnlyIfFieldChange(option.value);
+                              setDropdownState(prev => ({ ...prev, activeDropdown: null }));
+                            }}
+                          >
+                            <span>{option.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Operator Dropdown */}
+                <div className="col-span-4">
+                  <div className="relative">
+                    <button
+                      onClick={() => toggleDropdown('only-if-operator')}
+                      disabled={isLocked}
+                      className={`w-full px-3 py-2 text-left text-sm border rounded-md flex items-center justify-between bg-white ${isLocked ? 'opacity-75 cursor-not-allowed' : 'hover:bg-gray-50'
+                        }`}
+                    >
+                      <span>{onlyIfOperator || 'Select operator'}</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+
+                    {activeDropdown === 'only-if-operator' && !isLocked && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
+                        {operators.map((operator) => (
+                          <button
+                            key={operator.value}
+                            className="w-full px-4 py-2 text-sm text-left hover:bg-gray-50 flex items-center gap-2"
+                            onClick={() => {
+                              handleOnlyIfOperatorChange(operator.value);
+                              setDropdownState(prev => ({ ...prev, activeDropdown: null }));
+                            }}
+                          >
+                            <span>{operator.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Value Input */}
+                <div className="col-span-4">
+                  <input
+                    type="text"
+                    value={onlyIfValue}
+                    onChange={handleOnlyIfValueChange}
+                    disabled={isLocked}
+                    placeholder="Enter value"
+                    className={`w-full px-3 py-2 text-sm border rounded-md ${isLocked ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                  />
+                </div>
               </div>
             </div>
           )}
