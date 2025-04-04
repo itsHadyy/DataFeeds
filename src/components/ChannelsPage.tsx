@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import useShops from '../hooks/useShops';
-import { ArrowLeft, Settings, Plus } from 'lucide-react';
+import { ArrowLeft, Settings, Plus, Trash2 } from 'lucide-react';
 import NavigationBar from '../components/NavigationBar';
 
 const ChannelsPage: React.FC = () => {
@@ -12,7 +12,7 @@ const ChannelsPage: React.FC = () => {
     const searchParams = new URLSearchParams(location.search);
     const shopId = searchParams.get('shopId');
 
-    const { getShopById, shops } = useShops();
+    const { getShopById, shops, updateMappedChannels, removeChannel } = useShops();
     const shop = getShopById(shopId!);
 
     if (!shop) {
@@ -28,6 +28,8 @@ const ChannelsPage: React.FC = () => {
 
     const [selectedChannel, setSelectedChannel] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [channelToDelete, setChannelToDelete] = useState<string | null>(null);
 
     const handleChannelSelect = () => {
         if (selectedChannel) {
@@ -47,6 +49,30 @@ const ChannelsPage: React.FC = () => {
 
     const handleBackClick = () => {
         navigate('/');
+    };
+
+    const handleDeleteChannel = (channelId: string) => {
+        setChannelToDelete(channelId);
+    };
+
+    const confirmDeleteChannel = async () => {
+        if (!channelToDelete || !shopId) return;
+
+        setIsDeleting(true);
+        try {
+            // Use the removeChannel function from useShops
+            removeChannel(shopId, channelToDelete);
+            toast.success(`Channel ${channelToDelete} deleted successfully`);
+        } catch (error) {
+            toast.error(`Failed to delete channel: ${error}`);
+        } finally {
+            setIsDeleting(false);
+            setChannelToDelete(null);
+        }
+    };
+
+    const cancelDeleteChannel = () => {
+        setChannelToDelete(null);
     };
 
     // Dummy functions for NavigationBar props
@@ -83,6 +109,35 @@ const ChannelsPage: React.FC = () => {
             />
             <div className="p-6 w-full">
                 <ToastContainer />
+
+                {/* Delete Confirmation Modal */}
+                {channelToDelete && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white p-6 rounded-lg max-w-md w-full">
+                            <h3 className="text-lg font-semibold mb-4">Delete Channel</h3>
+                            <p className="mb-6">
+                                Are you sure you want to delete the {channelToDelete} channel?
+                                This will remove all mapping configurations for this channel.
+                            </p>
+                            <div className="flex justify-end space-x-3">
+                                <button
+                                    onClick={cancelDeleteChannel}
+                                    className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                                    disabled={isDeleting}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDeleteChannel}
+                                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                                    disabled={isDeleting}
+                                >
+                                    {isDeleting ? 'Deleting...' : 'Delete'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Add New Channel Section */}
                 <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -143,7 +198,6 @@ const ChannelsPage: React.FC = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Channel Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Channel Type</th>
-
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Update</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Options</th>
@@ -154,24 +208,51 @@ const ChannelsPage: React.FC = () => {
                                 filteredChannels.map((channelId) => {
                                     const channel = predefinedChannels.find(c => c.id === channelId);
                                     return channel ? (
-                                        <tr key={channelId} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{channelId}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <tr
+                                            key={channelId}
+                                            className="hover:bg-gray-50 group relative"
+                                            onClick={(e) => {
+                                                // Only trigger if the click wasn't on a button
+                                                if (!(e.target instanceof HTMLButtonElement)) {
+                                                    handleRemap(channelId);
+                                                }
+                                            }}
+                                        >
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 cursor-pointer">
+                                                {channelId}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 cursor-pointer">
                                                 {channel.name}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{channel.type}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10 hours ago</td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 cursor-pointer">
+                                                {channel.type}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 cursor-pointer">
+                                                10 hours ago
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap cursor-pointer">
                                                 <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                    @ Channel OK
+                                                    Active
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <button
-                                                    onClick={() => handleRemap(channelId)}
-                                                    className="text-blue-600 hover:text-blue-900 mr-4"
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                                {/* <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleRemap(channelId);
+                                                    }}
+                                                    className="text-blue-600 hover:text-blue-900 relative z-10"
                                                 >
-                                                    Edit Channel
+                                                    Edit
+                                                </button> */}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteChannel(channelId);
+                                                    }}
+                                                    className="text-red-600 hover:text-red-900 relative z-10"
+                                                >
+                                                    Delete
                                                 </button>
                                             </td>
                                         </tr>

@@ -424,7 +424,7 @@ const MappingField: React.FC<MappingFieldProps> = ({
 
           {/* Actions */}
           <div className="col-span-2 flex justify-end gap-2">
-            <button
+            {/* <button
               onClick={onEditClick}
               disabled={isLocked}
               className={`p-2 rounded-md ${isLocked
@@ -433,7 +433,7 @@ const MappingField: React.FC<MappingFieldProps> = ({
                 }`}
             >
               <PenSquare className="h-4 w-4" />
-            </button>
+            </button> */}
             <button
               onClick={onPreviewClick}
               className="flex items-center gap-2 px-3 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700"

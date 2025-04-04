@@ -152,14 +152,49 @@ const useShops = () => {
         );
     }, []);
 
-    const updateMappedChannels = useCallback((shopId: string, channelId: string) => {
-        setShops((prevShops) =>
-            prevShops.map((shop) => {
-                if (shop.id === shopId) {
-                    const mappedChannels = shop.mappedChannels ? [...shop.mappedChannels, channelId] : [channelId];
-                    return { ...shop, mappedChannels: [...new Set(mappedChannels)] };
+    const removeChannel = useCallback((shopId: string, channelId: string) => {
+        setShops(prevShops =>
+            prevShops.map(shop => {
+                if (shop.id !== shopId) return shop;
+
+                // Remove from mappedChannels array
+                const updatedMappedChannels = shop.mappedChannels?.filter(id => id !== channelId) || [];
+
+                // Remove from channelMappings object
+                const updatedChannelMappings = { ...shop.channelMappings };
+                if (updatedChannelMappings) {
+                    delete updatedChannelMappings[channelId];
                 }
-                return shop;
+
+                return {
+                    ...shop,
+                    mappedChannels: updatedMappedChannels,
+                    channelMappings: updatedChannelMappings
+                };
+            })
+        );
+    }, []);
+
+    const updateMappedChannels = useCallback((shopId: string, channelId: string, shouldAdd: boolean = true) => {
+        setShops(prevShops =>
+            prevShops.map(shop => {
+                if (shop.id !== shopId) return shop;
+
+                if (shouldAdd) {
+                    // Add channel to mappedChannels (unique only)
+                    const mappedChannels = shop.mappedChannels ? [...shop.mappedChannels, channelId] : [channelId];
+                    return {
+                        ...shop,
+                        mappedChannels: [...new Set(mappedChannels)]
+                    };
+                } else {
+                    // Remove channel from mappedChannels
+                    const updatedMappedChannels = shop.mappedChannels?.filter(id => id !== channelId) || [];
+                    return {
+                        ...shop,
+                        mappedChannels: updatedMappedChannels
+                    };
+                }
             })
         );
     }, []);
@@ -239,6 +274,7 @@ const useShops = () => {
         );
     }, []);
 
+
     useEffect(() => {
         const fetchShops = async () => {
             try {
@@ -276,6 +312,7 @@ const useShops = () => {
         updateShopMappings,
         loading,
         error,
+        removeChannel,
 
         getInternalMappings: (shopId: string) => {
             const shop = shops.find(s => s.id === shopId);

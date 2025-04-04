@@ -7,7 +7,7 @@ import { XMLManager } from '../services/XMLManager';
 import MappingField from './MappingField';
 import { XMLField, XMLData, XMLMapping } from '../types/xml';
 import { FieldOption } from '../types/mapping';
-import { Save, Undo, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Save, Undo, ArrowLeft, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 import { XMLBuilder } from '../services/XMLBuilder';
 import NavigationBar from '../components/NavigationBar';
 import { useGlobalUI } from '../contexts/GlobalUI'
@@ -100,6 +100,12 @@ interface PreviewRow {
   mappedValue: string;
 }
 
+interface CustomFieldModalState {
+  isOpen: boolean;
+  fieldName: string;
+  fieldValue: string;
+}
+
 const ChannelMappingPage: React.FC = () => {
   const { channelId } = useParams<{ channelId: string }>();
   const location = useLocation();
@@ -119,6 +125,11 @@ const ChannelMappingPage: React.FC = () => {
     mappings: XMLMapping[];
     mappingFields: XMLField[];
   }>({ mappings: [], mappingFields: [] });
+  const [customFieldModal, setCustomFieldModal] = useState<CustomFieldModalState>({
+    isOpen: false,
+    fieldName: '',
+    fieldValue: ''
+  });
 
   // Preview dialog state
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
@@ -238,15 +249,28 @@ const ChannelMappingPage: React.FC = () => {
             required: !field.optional,
             helpText: field.helpText || '',
             optional: field.optional || false,
+            isCustom: false
           };
         });
 
-        setMappingFields(newMappingFields);
-        setTempMappingFields(newMappingFields);
+        // Add any existing custom fields from saved mappings
+        const customFields = savedMappings
+          .filter(m => !channelSchema.some(f => f.name === m.targetField))
+          .map(mapping => ({
+            name: mapping.targetField,
+            value: mapping.value,
+            required: false,
+            helpText: '',
+            optional: true,
+            isCustom: true
+          }));
+
+        setMappingFields([...newMappingFields, ...customFields]);
+        setTempMappingFields([...newMappingFields, ...customFields]);
         setTempMappings(savedMappings.length ? savedMappings : internalMappings);
         setLastSavedState({
           mappings: savedMappings.length ? savedMappings : internalMappings,
-          mappingFields: newMappingFields
+          mappingFields: [...newMappingFields, ...customFields]
         });
       } catch (error) {
         toast.error('Error parsing XML content');
@@ -297,14 +321,12 @@ const ChannelMappingPage: React.FC = () => {
         const mappedData = xmlManager.applyMappings(tempMappings);
 
         const previewRows = xmlData.items.map((item, index) => {
-          // 1. First try to find the actual ID field in your data
           const idField = Object.keys(item).find(key =>
             key.toLowerCase().includes('id') ||
             key.toLowerCase().includes('sku') ||
             key.toLowerCase().includes('code')
           );
 
-          // 2. Then try to find the actual title field
           const titleField = Object.keys(item).find(key =>
             key.toLowerCase().includes('title') ||
             key.toLowerCase().includes('name') ||
@@ -315,7 +337,7 @@ const ChannelMappingPage: React.FC = () => {
             productId: idField ? item[idField] : `ITEM_${index + 1}`,
             productTitle: titleField ? item[titleField] : 'Product',
             fieldName: field.name,
-            originalValue: item[field.name] || 'N/A', // Add original value
+            originalValue: item[field.name] || 'N/A',
             mappedValue: mappedData.items[index]?.[field.name] || 'N/A'
           };
         });
@@ -333,6 +355,49 @@ const ChannelMappingPage: React.FC = () => {
     setShowPreviewDialog(true);
   };
 
+  const handleAddCustomField = () => {
+    setCustomFieldModal({
+      isOpen: true,
+      fieldName: '',
+      fieldValue: ''
+    });
+  };
+
+  const handleCustomFieldSubmit = () => {
+    if (!customFieldModal.fieldName.trim()) {
+      toast.error('Field name is required');
+      return;
+    }
+
+    if (tempMappingFields.some(f => f.name === customFieldModal.fieldName)) {
+      toast.error('Field name already exists');
+      return;
+    }
+
+    const newField: XMLField = {
+      name: customFieldModal.fieldName,
+      value: customFieldModal.fieldValue,
+      required: false,
+      helpText: '',
+      optional: true,
+      isCustom: true
+    };
+
+    setTempMappingFields(prev => [...prev, newField]);
+    setTempMappings(prev => [...prev, {
+      targetField: customFieldModal.fieldName,
+      value: customFieldModal.fieldValue,
+      type: 'direct' // Default mapping type
+    }]);
+    setHasUnsavedChanges(true);
+    setCustomFieldModal({ isOpen: false, fieldName: '', fieldValue: '' });
+  };
+
+  const handleRemoveCustomField = (fieldName: string) => {
+    setTempMappingFields(prev => prev.filter(f => f.name !== fieldName));
+    setTempMappings(prev => prev.filter(m => m.targetField !== fieldName));
+    setHasUnsavedChanges(true);
+  };
 
   const xmlData = xmlManager.getData();
 
@@ -346,7 +411,7 @@ const ChannelMappingPage: React.FC = () => {
 
     if (shopId && channelId) {
       updateMappedChannels(shopId, channelId);
-      updateShopMappings(shopId, channelId, tempMappings); // Save the actual mappings
+      updateShopMappings(shopId, channelId, tempMappings);
     }
 
     navigate(`/channels?shopId=${shopId}`);
@@ -364,7 +429,6 @@ const ChannelMappingPage: React.FC = () => {
     setActiveCommentField(fieldToSet);
     setShowComments(true);
 
-    // Show comment count badge if there are comments
     const fieldComments = shop?.comments?.filter(c => c.field === fieldName) || [];
     if (fieldComments.length > 0) {
       toast.info(`${fieldComments.length} comments on ${fieldName}`, {
@@ -443,6 +507,13 @@ const ChannelMappingPage: React.FC = () => {
             Discard Changes
           </button>
           <button
+            onClick={handleAddCustomField}
+            className="px-4 py-2 rounded-md bg-[#301D56] text-white hover:bg-[#3a2468]"
+          >
+            <Plus className="h-4 w-4 inline-block mr-2" />
+            Add Custom Field
+          </button>
+          <button
             onClick={handleSaveAndProceed}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
@@ -461,7 +532,7 @@ const ChannelMappingPage: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <h3 className="text-lg font-semibold p-4">Required Fields</h3>
             {tempMappingFields
-              .filter((field) => !field.optional)
+              .filter((field) => !field.optional && !field.isCustom)
               .map((field) => (
                 <MappingField
                   key={field.name}
@@ -480,7 +551,7 @@ const ChannelMappingPage: React.FC = () => {
 
             <h3 className="text-lg font-semibold p-4 mt-4">Optional Fields</h3>
             {tempMappingFields
-              .filter((field) => field.optional)
+              .filter((field) => field.optional && !field.isCustom)
               .map((field) => (
                 <MappingField
                   key={field.name}
@@ -496,6 +567,31 @@ const ChannelMappingPage: React.FC = () => {
                   optional={field.optional}
                 />
               ))}
+
+            {tempMappingFields.filter(field => field.isCustom).length > 0 && (
+              <>
+                <h3 className="text-lg font-semibold p-4 mt-4">Custom Fields</h3>
+                {tempMappingFields
+                  .filter((field) => field.isCustom)
+                  .map((field) => (
+                    <MappingField
+                      key={field.name}
+                      fieldName={field.name}
+                      fieldValue={field.value}
+                      fieldOptions={getFieldOptions(xmlData)}
+                      helpText={field.helpText}
+                      onFieldChange={(mapping) => handleFieldChange(field.name, mapping)}
+                      onPreviewClick={() => handlePreviewClick(field)}
+                      onCommentClick={() => handleCommentClick(field.name)}
+                      onABTestClick={handleABTestClick}
+                      onEditClick={handleEditClick}
+                      optional={true}
+                      isCustom={true}
+                      onRemove={() => handleRemoveCustomField(field.name)}
+                    />
+                  ))}
+              </>
+            )}
           </div>
         )}
 
@@ -573,6 +669,72 @@ const ChannelMappingPage: React.FC = () => {
                 >
                   Close
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Custom Field Modal */}
+        {customFieldModal.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg w-full max-w-md">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">Add Custom Field</h2>
+                <button 
+                  onClick={() => setCustomFieldModal({...customFieldModal, isOpen: false})}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Field Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={customFieldModal.fieldName}
+                    onChange={(e) => setCustomFieldModal({
+                      ...customFieldModal,
+                      fieldName: e.target.value
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    placeholder="Enter field name"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Default Value
+                  </label>
+                  <input
+                    type="text"
+                    value={customFieldModal.fieldValue}
+                    onChange={(e) => setCustomFieldModal({
+                      ...customFieldModal,
+                      fieldValue: e.target.value
+                    })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    placeholder="Enter default value (optional)"
+                  />
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    onClick={() => setCustomFieldModal({...customFieldModal, isOpen: false})}
+                    className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCustomFieldSubmit}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    Add Field
+                  </button>
+                </div>
               </div>
             </div>
           </div>
