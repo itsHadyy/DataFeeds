@@ -113,28 +113,55 @@ const ChannelsPage: React.FC = () => {
                 )}
 
                 {/* Add New Channel Section */}
-                <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                    <h3 className="text-lg font-semibold mb-4">Add New Channel</h3>
-                    <div className="flex gap-4 items-center">
-                        <select
-                            value={selectedChannel || ''}
-                            onChange={(e) => setSelectedChannel(e.target.value)}
-                            className="flex-1 p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-200"
-                        >
-                            <option value="">Select Channel</option>
-                            {predefinedChannels.map((channel) => (
-                                <option key={channel.id} value={channel.id}>
-                                    {channel.name}
-                                </option>
-                            ))}
-                        </select>
+                <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">Add New Channel</h3>
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            {predefinedChannels.length} options
+                        </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1 relative">
+                            <select
+                                value={selectedChannel || ''}
+                                onChange={(e) => setSelectedChannel(e.target.value)}
+                                className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+                            >
+                                <option value="" disabled>Select a channel...</option>
+                                {predefinedChannels.map((channel) => (
+                                    <option key={channel.id} value={channel.id} className="py-2">
+                                        {channel.name} ({channel.type})
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400">
+                                <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                        </div>
+
                         <button
                             onClick={handleChannelSelect}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                            disabled={!selectedChannel}
+                            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                            </svg>
                             Create Channel
                         </button>
                     </div>
+
+                    {selectedChannel && (
+                        <div className="mt-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-700 flex items-start gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                            </svg>
+                            <span>You've selected: <span className="font-medium">{predefinedChannels.find(c => c.id === selectedChannel)?.name}</span></span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Header Section */}
