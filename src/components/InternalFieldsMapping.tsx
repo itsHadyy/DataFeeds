@@ -55,11 +55,11 @@ const InternalFieldsMapping: React.FC = () => {
 
     useEffect(() => {
         if (shopId && selectedShop) {
-            // Initialize with saved mappings if they exist, otherwise use empty array
+            
             const savedMappings = selectedShop.internalMappings ? [...selectedShop.internalMappings] : [];
             setTempMappings(savedMappings);
             
-            // Parse XML content if it exists
+            
             if (selectedShop.xmlContent) {
                 parseAndInitializeXML(selectedShop.xmlContent, savedMappings);
             }
@@ -109,7 +109,7 @@ const InternalFieldsMapping: React.FC = () => {
             helpText: xmlData.schema.find((s) => s.name === field)?.helpText,
         }));
 
-        // Apply saved mappings to fields if they exist
+        
         if (savedMappings && savedMappings.length > 0) {
             savedMappings.forEach(mapping => {
                 const fieldIndex = newMappingFields.findIndex(f => f.name === mapping.targetField);
@@ -157,7 +157,7 @@ const InternalFieldsMapping: React.FC = () => {
     }, []);
 
     const handleDiscardChanges = useCallback(() => {
-        // Reset to the original state (either the saved mappings or the initial state if no mappings were saved)
+        
         setTempMappings(originalState.mappings);
         setTempMappingFields(originalState.mappingFields);
 
@@ -194,10 +194,10 @@ const InternalFieldsMapping: React.FC = () => {
             const xmlString = xmlManager.generateXML(updatedData.items);
             setModifiedXMLString(xmlString);
 
-            // Save the mappings
+            
             if (shopId) {
                 updateInternalMappings(shopId, tempMappings);
-                // Update the original state to the newly saved state
+                
                 setOriginalState({
                     mappings: tempMappings,
                     mappingFields: tempMappingFields
@@ -264,7 +264,7 @@ const InternalFieldsMapping: React.FC = () => {
         setActiveCommentField(fieldToSet);
         setShowComments(true);
 
-        // Show comment count badge
+        
         const fieldComments = selectedShop?.comments?.filter(c => c.field === fieldName) || [];
         if (fieldComments.length > 0) {
             toast.info(`${fieldComments.length} comments on ${fieldName}`, {

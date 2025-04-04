@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, MessageSquare, Shapes, PenSquare, Eye, Lock, Unlock } from 'lucide-react';
+import { ChevronDown, MessageSquare, Eye, Lock, Unlock } from 'lucide-react';
 import { FieldOption } from '../types/mapping';
 import { XMLMapping } from '../types/xml';
 import FieldSelectionDropdown from './FieldSelectionDropdown';
@@ -27,9 +27,9 @@ const MappingField: React.FC<MappingFieldProps> = ({
   onFieldChange,
   onPreviewClick,
   onCommentClick,
-  onABTestClick,
-  onEditClick,
-  optional,
+  // onABTestClick,
+  // onEditClick,
+  // optional,
 }) => {
   const {
     state,
@@ -58,7 +58,7 @@ const MappingField: React.FC<MappingFieldProps> = ({
   const [onlyIfValue, setOnlyIfValue] = useState<string>('');
   const [showConditionDropdown, setShowConditionDropdown] = useState(false);
 
-  // Lock the field if it's 'id'
+  
   useEffect(() => {
     if (fieldName.toLowerCase() === 'id' && !isLocked) {
       toggleLock();
@@ -85,7 +85,7 @@ const MappingField: React.FC<MappingFieldProps> = ({
       type: mappingType,
     };
 
-    // Add type-specific fields
+    
     if (mappingType === 'rename') {
       baseMapping.sourceField = selectedField;
     } else if (mappingType === 'static') {
@@ -95,7 +95,7 @@ const MappingField: React.FC<MappingFieldProps> = ({
       baseMapping.separator = separator;
     }
 
-    // Add condition fields if needed
+    
     if (condition === 'onlyIf') {
       baseMapping.condition = {
         field: onlyIfField || '',
