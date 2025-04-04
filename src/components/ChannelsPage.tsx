@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import useShops from '../hooks/useShops';
-import { ArrowLeft, Settings, Plus, Trash2 } from 'lucide-react';
+
 import NavigationBar from '../components/NavigationBar';
 
 const ChannelsPage: React.FC = () => {
@@ -12,7 +12,7 @@ const ChannelsPage: React.FC = () => {
     const searchParams = new URLSearchParams(location.search);
     const shopId = searchParams.get('shopId');
 
-    const { getShopById, shops, updateMappedChannels, removeChannel } = useShops();
+    const { getShopById, shops, removeChannel } = useShops();
     const shop = getShopById(shopId!);
 
     if (!shop) {
@@ -43,14 +43,6 @@ const ChannelsPage: React.FC = () => {
         navigate(`/channel-mapping/${channelId}?shopId=${shopId}`);
     };
 
-    const handleDownload = (channelId: string) => {
-        toast.info(`Download XML for ${channelId}`);
-    };
-
-    const handleBackClick = () => {
-        navigate('/');
-    };
-
     const handleDeleteChannel = (channelId: string) => {
         setChannelToDelete(channelId);
     };
@@ -60,7 +52,7 @@ const ChannelsPage: React.FC = () => {
 
         setIsDeleting(true);
         try {
-            // Use the removeChannel function from useShops
+
             removeChannel(shopId, channelToDelete);
             toast.success(`Channel ${channelToDelete} deleted successfully`);
         } catch (error) {
@@ -75,21 +67,7 @@ const ChannelsPage: React.FC = () => {
         setChannelToDelete(null);
     };
 
-    // Dummy functions for NavigationBar props
-    const setShowCommentsDialog = (show: boolean) => {
-        console.log("setShowCommentsDialog:", show);
-    };
 
-    const setShowSettings = (show: boolean) => {
-        console.log("setShowSettings:", show);
-    };
-
-    const onInternalFieldsClick = () => {
-        console.log("onInternalFieldsClick");
-        navigate('/');
-    };
-
-    // Filter channels based on search term
     const filteredChannels = shop.mappedChannels?.filter(channelId => {
         const channel = predefinedChannels.find(c => c.id === channelId);
         return channel?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -101,11 +79,6 @@ const ChannelsPage: React.FC = () => {
             <NavigationBar
                 selectedShopId={shopId}
                 shops={shops}
-                setShowCommentsDialog={setShowCommentsDialog}
-                setShowSettings={setShowSettings}
-                handleBackClick={handleBackClick}
-                showSettings={false}
-                onInternalFieldsClick={onInternalFieldsClick}
             />
             <div className="p-6 w-full">
                 <ToastContainer />
@@ -212,7 +185,7 @@ const ChannelsPage: React.FC = () => {
                                             key={channelId}
                                             className="hover:bg-gray-50 group relative"
                                             onClick={(e) => {
-                                                // Only trigger if the click wasn't on a button
+
                                                 if (!(e.target instanceof HTMLButtonElement)) {
                                                     handleRemap(channelId);
                                                 }
