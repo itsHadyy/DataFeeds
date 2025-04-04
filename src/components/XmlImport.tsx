@@ -1,8 +1,6 @@
-// components/XmlImport.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useShops from '../hooks/useShops';
-import { xml2js } from 'xml-js';
 
 const XmlImport: React.FC = () => {
     const [xmlFiles, setXmlFiles] = useState<FileList | null>(null);
@@ -26,7 +24,7 @@ const XmlImport: React.FC = () => {
                 const xmlContent = e.target?.result as string;
                 if (shopId) {
                     uploadXMLToShop(shopId, xmlContent);
-                    navigate('/loading'); // Redirect to loading page
+                    navigate('/loading'); 
                 }
             };
 

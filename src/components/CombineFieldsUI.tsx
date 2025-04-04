@@ -30,7 +30,6 @@ const CombineFieldsUI: React.FC<CombineFieldsUIProps> = ({
   };
 
   const handleSeparatorChange = (newSeparator: string) => {
-    // Directly use the separator value
     onSeparatorChange(newSeparator);
   };
 

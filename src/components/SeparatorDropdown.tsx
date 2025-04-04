@@ -24,7 +24,7 @@ const SeparatorDropdown: React.FC<SeparatorDropdownProps> = ({
   const [customText, setCustomText] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Simplified separator options - value is the actual separator
+  
   const separatorOptions: SeparatorOption[] = [
     { value: '', label: 'None' },
     { value: ' ', label: 'Space' },

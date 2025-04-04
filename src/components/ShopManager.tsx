@@ -9,7 +9,7 @@ const ShopManager: React.FC<ShopManagerProps> = ({ onAddShop }) => {
 
     const handleAddShop = () => {
         if (shopName.trim()) {
-            onAddShop(shopName); // No need to generate ID here
+            onAddShop(shopName); 
             setShopName('');
         }
     };

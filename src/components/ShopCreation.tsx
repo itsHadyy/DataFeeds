@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useShops from '../hooks/useShops'; // Import the hook
+import useShops from '../hooks/useShops'; 
 
 const ShopCreation: React.FC = () => {
     const [shopName, setShopName] = useState('');
     const navigate = useNavigate();
-    const { addShop } = useShops(); // Use addShop from the hook
+    const { addShop } = useShops(); 
 
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
-        addShop(shopName); // Add shop using the hook
+        addShop(shopName); 
         navigate('/shop-import');
     };
 

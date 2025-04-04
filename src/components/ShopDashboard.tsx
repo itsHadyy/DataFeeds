@@ -17,13 +17,13 @@ const ShopDashboard: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [showOptionsMenu, setShowOptionsMenu] = useState<string | null>(null);
 
-    // Filter shops based on search term
+    
     const filteredShops = shops.filter(shop =>
         shop.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         shop.id.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Helper function to count products in XML
+    
     const countProductsInXML = (xmlContent: string): number => {
         try {
             const parser = new DOMParser();
@@ -85,7 +85,7 @@ const ShopDashboard: React.FC = () => {
         }
     };
 
-    // Close menu when clicking outside
+    
     useEffect(() => {
         const handleClickOutside = () => setShowOptionsMenu(null);
         document.addEventListener('click', handleClickOutside);

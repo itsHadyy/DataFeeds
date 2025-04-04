@@ -131,7 +131,7 @@ const ChannelMappingPage: React.FC = () => {
     fieldValue: ''
   });
 
-  // Preview dialog state
+
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
   const [previewField, setPreviewField] = useState<XMLField | null>(null);
   const [previewData, setPreviewData] = useState<
@@ -253,7 +253,7 @@ const ChannelMappingPage: React.FC = () => {
           };
         });
 
-        // Add any existing custom fields from saved mappings
+
         const customFields = savedMappings
           .filter(m => !channelSchema.some(f => f.name === m.targetField))
           .map(mapping => ({
@@ -387,7 +387,7 @@ const ChannelMappingPage: React.FC = () => {
     setTempMappings(prev => [...prev, {
       targetField: customFieldModal.fieldName,
       value: customFieldModal.fieldValue,
-      type: 'direct' // Default mapping type
+      type: 'direct'
     }]);
     setHasUnsavedChanges(true);
     setCustomFieldModal({ isOpen: false, fieldName: '', fieldValue: '' });
@@ -680,14 +680,14 @@ const ChannelMappingPage: React.FC = () => {
             <div className="bg-white p-6 rounded-lg w-full max-w-md">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">Add Custom Field</h2>
-                <button 
-                  onClick={() => setCustomFieldModal({...customFieldModal, isOpen: false})}
+                <button
+                  onClick={() => setCustomFieldModal({ ...customFieldModal, isOpen: false })}
                   className="text-gray-500 hover:text-gray-700"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -704,7 +704,7 @@ const ChannelMappingPage: React.FC = () => {
                     placeholder="Enter field name"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Default Value
@@ -720,10 +720,10 @@ const ChannelMappingPage: React.FC = () => {
                     placeholder="Enter default value (optional)"
                   />
                 </div>
-                
+
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
-                    onClick={() => setCustomFieldModal({...customFieldModal, isOpen: false})}
+                    onClick={() => setCustomFieldModal({ ...customFieldModal, isOpen: false })}
                     className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
                   >
                     Cancel

@@ -87,7 +87,7 @@ const useShops = () => {
                 )
             );
         } catch (err) {
-            // Type guard to check if err is an instance of Error
+            
             if (err instanceof Error) {
                 console.error(err.message);
             } else {
@@ -157,10 +157,10 @@ const useShops = () => {
             prevShops.map(shop => {
                 if (shop.id !== shopId) return shop;
 
-                // Remove from mappedChannels array
+                
                 const updatedMappedChannels = shop.mappedChannels?.filter(id => id !== channelId) || [];
 
-                // Remove from channelMappings object
+                
                 const updatedChannelMappings = { ...shop.channelMappings };
                 if (updatedChannelMappings) {
                     delete updatedChannelMappings[channelId];
@@ -181,14 +181,14 @@ const useShops = () => {
                 if (shop.id !== shopId) return shop;
 
                 if (shouldAdd) {
-                    // Add channel to mappedChannels (unique only)
+                    
                     const mappedChannels = shop.mappedChannels ? [...shop.mappedChannels, channelId] : [channelId];
                     return {
                         ...shop,
                         mappedChannels: [...new Set(mappedChannels)]
                     };
                 } else {
-                    // Remove channel from mappedChannels
+                    
                     const updatedMappedChannels = shop.mappedChannels?.filter(id => id !== channelId) || [];
                     return {
                         ...shop,
@@ -246,7 +246,7 @@ const useShops = () => {
         const newComment: Comment = {
             ...comment,
             id: nanoid(),
-            timestamp: new Date().toISOString() // Proper ISO format
+            timestamp: new Date().toISOString() 
         };
 
         setShops((prevShops) =>

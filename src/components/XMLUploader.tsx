@@ -31,7 +31,7 @@ const XMLUploader: React.FC<XMLUploaderProps> = ({ onFieldsExtracted, shopId, on
       const items = xmlDoc.getElementsByTagName('item');
       if (items.length === 0) throw new Error('No items found in XML');
 
-      // Only process fields extraction if callback is provided
+      
       if (onFieldsExtracted) {
         const schema = new Map<string, { required?: boolean; helpText?: string }>();
         Array.from(items).forEach((item) => {

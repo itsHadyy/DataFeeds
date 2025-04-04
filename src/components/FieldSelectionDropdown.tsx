@@ -17,7 +17,7 @@ const FieldSelectionDropdown: React.FC<FieldSelectionDropdownProps> = ({
   onClose,
   onSelect,
   selectedValue,
-  fieldOptions = [], // Provide default empty array
+  fieldOptions = [], 
   mode = 'single',
   mappingType = 'rename',
 }) => {
@@ -88,9 +88,9 @@ const FieldSelectionDropdown: React.FC<FieldSelectionDropdownProps> = ({
     if (!field) return;
     onSelect({
       ...field,
-      type: field.type || 'input' // Ensure type is always defined
+      type: field.type || 'input' 
     });
-    // Close dropdown immediately for rename mode
+    
     if (mappingType === 'rename') {
       onClose();
     }
