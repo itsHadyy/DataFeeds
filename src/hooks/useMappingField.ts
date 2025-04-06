@@ -10,7 +10,6 @@ interface MappingFieldState {
 }
 
 export const useMappingField = (initialValue: string, fieldName: string) => {
-  // Load initial state from localStorage or use defaults
   const loadState = (): MappingFieldState => {
     const savedState = localStorage.getItem(`mappingFieldState-${fieldName}`);
     return savedState
@@ -20,7 +19,7 @@ export const useMappingField = (initialValue: string, fieldName: string) => {
         selectedField: initialValue || '',
         selectedFields: [],
         separator: 'none',
-        isLocked: fieldName === 'id', // Lock the id field by default
+        isLocked: fieldName === 'id',
       };
   };
 
@@ -30,7 +29,6 @@ export const useMappingField = (initialValue: string, fieldName: string) => {
     isFieldDropdownOpen: false,
   });
 
-  // Save state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem(`mappingFieldState-${fieldName}`, JSON.stringify(state));
   }, [state, fieldName]);
